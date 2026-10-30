@@ -4,6 +4,8 @@ using BTD_Mod_Helper.Api.ModOptions;
 using MelonLoader;
 using LateGameOptimisation;
 using UnityEngine;
+using System;
+using System.IO;
 
 [assembly: MelonInfo(typeof(LateGameOptimisation.LateGameOptimisation), ModHelperData.Name, ModHelperData.Version, ModHelperData.RepoOwner)]
 [assembly: MelonGame("Ninja Kiwi", "BloonsTD6")]
@@ -18,6 +20,13 @@ public class LateGameOptimisation : BloonsTD6Mod
     // A separate new setting means old saved logging preferences cannot hide
     // the display on the first launch of this version. Logging stays opt-in.
     public static readonly ModSettingBool ShowDiagnosticsOverlay = new(true);
+    public static readonly ModSettingHotkey BenchmarkHotkey = new(KeyCode.F8);
+    public static readonly ModSettingButton StartBenchmark = new(() => instance?.StartRecording());
+    public static readonly ModSettingButton StopAndSaveBenchmark = new(() => instance?.StopAndSave());
+    private static LateGameOptimisation? instance;
+    private readonly BenchmarkRecorder recorder = new();
+    private long recordingTimestamp;
+    private string recordingStatus = "F8: Start benchmark (10 min maximum)";
     private readonly FrameTimeWindow window = new();
     private long previousTimestamp;
     private long nextDisplayTimestamp;
@@ -27,11 +36,26 @@ public class LateGameOptimisation : BloonsTD6Mod
 
     public override void OnApplicationStart()
     {
+        instance = this;
         ModHelper.Msg<LateGameOptimisation>("Diagnostics prototype loaded. No gameplay optimisations enabled.");
     }
 
     public override void OnUpdate()
     {
+        if (BenchmarkHotkey.JustPressed())
+        {
+            if (recorder.IsRecording || recorder.HasPendingSave) StopAndSave();
+            else StartRecording();
+        }
+        // Separate timestamps avoid recording an interval from before Start,
+        // and keep recording working when the overlay and logging are hidden.
+        if (recorder.IsRecording)
+        {
+            long timestamp = Stopwatch.GetTimestamp();
+            if (recordingTimestamp != 0 && recorder.Add((timestamp - recordingTimestamp) * 1000.0 / Stopwatch.Frequency))
+                StopAndSave();
+            recordingTimestamp = timestamp;
+        }
         // Main-thread callback intervals, NOT CPU timings of game methods.
         if (!EnableFrameTiming && (!ShowDiagnosticsOverlay || overlayFailed))
         {
@@ -72,6 +96,32 @@ public class LateGameOptimisation : BloonsTD6Mod
         previousTimestamp = now;
     }
 
+    private void StartRecording()
+    {
+        if (!recorder.Start()) return;
+        recordingTimestamp = 0;
+        recordingStatus = "RECORDING - F8: Stop and save";
+    }
+
+    private void StopAndSave()
+    {
+        recorder.Stop();
+        if (!recorder.HasPendingSave) return;
+        try
+        {
+            string documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            if (string.IsNullOrWhiteSpace(documents)) throw new IOException("Windows Documents folder was not found.");
+            string path = recorder.Save(Path.Combine(documents, "BTD6 Benchmarks"));
+            recordingStatus = $"Saved {recorder.Count} frames to Documents/BTD6 Benchmarks";
+            ModHelper.Msg<LateGameOptimisation>($"Benchmark saved and closed: {path}");
+        }
+        catch (Exception exception)
+        {
+            recordingStatus = "SAVE FAILED - F8 or Stop and Save to retry";
+            ModHelper.Msg<LateGameOptimisation>($"Benchmark save failed; buffer retained: {exception.Message}");
+        }
+    }
+
     public override void OnGUI()
     {
         // IMGUI is drawn by MelonLoader across scene changes. Repaint-only
@@ -91,10 +141,11 @@ public class LateGameOptimisation : BloonsTD6Mod
             // Bottom-left keeps the overlay away from the top resource bar.
             // Screen-relative bounds also adapt to window-size changes.
             float width = Mathf.Min(390, Screen.width - 16);
-            float top = Mathf.Max(8, Screen.height - 158);
-            GUI.Box(new Rect(8, top, width, 150), "");
+            float top = Mathf.Max(8, Screen.height - 198);
+            GUI.Box(new Rect(8, top, width, 190), "");
             overlayStyle.normal.textColor = Color.white;
             GUI.Label(new Rect(18, top + 8, width - 20, 134), displayText, overlayStyle);
+            GUI.Label(new Rect(18, top + 140, width - 20, 46), recordingStatus, overlayStyle);
         }
         catch (System.Exception exception)
         {

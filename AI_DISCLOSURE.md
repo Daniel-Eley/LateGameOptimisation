@@ -19,3 +19,7 @@ Keep the README disclosure prominent. Contributor change descriptions should ide
 The 0.2.0 diagnostics overlay, its settings integration and accompanying documentation
 were also generated with Codex. It has been compiled against the local game assemblies;
 no independent human audit or in-game visual validation is claimed.
+
+The 0.3.0 bounded benchmark recorder, CSV export, hotkey/settings controls and
+recorder tests were generated with Codex. Build and automated tests passed;
+in-game recorder validation is still pending.

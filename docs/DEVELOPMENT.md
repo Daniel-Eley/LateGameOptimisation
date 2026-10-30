@@ -88,3 +88,21 @@ The local Release build and statistics checks passed for 0.2.0. Visual rendering
 and interaction in the actual game have not yet been verified. The explicit UI
 references match the locally installed IL2CPP assemblies. The diagnostic overlay
 is the user-requested UI addition; gameplay graphics and effects remain unchanged.
+
+## Benchmark recorder (0.3.0)
+
+BenchmarkRecorder owns a preallocated 120,000-element array of doubles on the
+main thread. The recording clock is separate from overlay/log sampling, and the
+first update after Start establishes its timestamp rather than including a
+pre-start interval. Stop marks the buffer pending save. Save uses CreateNew,
+invariant numeric formatting and using blocks to flush and close the file before
+reporting success. A write/close error leaves pending data available for retry;
+Start refuses to overwrite it. Saves occur after measurement, not per frame.
+No background worker or gameplay-state access is introduced.
+
+Bounds are 120,000 samples or 600,000 measured milliseconds, checked on each valid
+sample. The interval crossing the duration limit is retained. No shutdown autosave
+is implemented. Users must stop and save before exit. Tests cover exact CSV rows,
+comma-decimal locales, exclusive reopen after saving, failed-save retry, repeated
+sessions and both automatic bounds. The overlay remains drawing-only; hotkey
+observation and settings buttons are the explicit recording controls.

@@ -4,7 +4,7 @@ This is an experimental diagnostics prototype, not a security-audited release.
 
 ## Runtime scope
 
-The mod's source collects numeric callback intervals in bounded memory and logs a summary through Mod Helper. It contains no network client, updater, executable downloads, shell execution, credential access, save editing, unsafe code or native memory patching. This description covers this project's code, not MelonLoader, Mod Helper, Unity or BTD6.
+The mod collects numeric callback intervals in bounded memory, displays diagnostics and optionally logs summaries through Mod Helper. User-started benchmark sessions save numerical CSV files under the Windows Documents/BTD6 Benchmarks directory after recording stops. Files have unique names and are closed after writing; failed saves retain the buffer for retry. It does not read existing benchmark files or upload them. It contains no network client, updater, executable downloads, shell execution, credential access, save editing, unsafe code or native memory patching. This description covers this project's code, not MelonLoader, Mod Helper, Unity or BTD6.
 
 Mods run inside the game process. They are not sandboxed. Public source and code comments support review but do not guarantee safety.
 

@@ -1,6 +1,6 @@
 # LateGameOptimisation
 
-An experimental BTD6 mod investigating late-game performance. **Version 0.2.0 is a diagnostics foundation, not a performance improvement or a multicore simulation mod.** It does not change targeting, damage, projectiles or game speed. In-game compatibility has not yet been tested.
+An experimental BTD6 mod investigating late-game performance. **Version 0.3.0 is a diagnostics foundation, not a performance improvement or a multicore simulation mod.** It does not change targeting, damage, projectiles or game speed. In-game compatibility has not yet been tested.
 
 **AI development disclosure:** This project is developed with OpenAI Codex. AI generated the initial custom diagnostic code, tests, documentation and workflow changes from the Mod Helper template, under Daniel Eley's direction. This is substantial AI involvement, not just autocomplete. See [AI_DISCLOSURE.md](AI_DISCLOSURE.md) for scope and validation limits.
 
@@ -50,7 +50,7 @@ The GitHub workflow tests the statistics class without game dependencies. A gree
 
 ## Security and trust
 
-Our runtime code has no network requests, telemetry, process launching, dynamic code downloads or direct file access. It logs numerical timing summaries through Mod Helper/MelonLoader. Those dependencies have their own behavior and permissions; this does not sandbox them or guarantee that the whole modded game is secure.
+Our runtime code has no network requests, telemetry, process launching or dynamic code downloads. User-started benchmarks write numerical CSV files to Documents/BTD6 Benchmarks only after recording stops. It logs numerical timing summaries through Mod Helper/MelonLoader. Those dependencies have their own behavior and permissions; this does not sandbox them or guarantee that the whole modded game is secure.
 
 Read [SECURITY.md](SECURITY.md) for the review and release policy. Source visibility makes review possible; it does not prove a downloaded DLL matches that source. No release binary is being advertised yet.
 
@@ -59,3 +59,42 @@ Read [SECURITY.md](SECURITY.md) for the review and release policy. Source visibi
 The first milestone is measurement. The next is identifying a specific expensive calculation that can be safely isolated. Multicore gameplay work remains unimplemented, and speedups are not promised.
 
 Original project code is provided under the MIT license. BTD6 and its dependencies are separately owned and licensed.
+
+## Save benchmarks without closing BTD6 (0.3.0)
+
+1. Load your round-300 save and select built-in 3x speed.
+2. Unpause and let the game settle. Press **F8** to start recording.
+3. Play for roughly 60 seconds without opening menus or switching applications.
+4. Press **F8** again to stop and save, then pause. Wait for the overlay to say **Saved**.
+5. Open your Windows **Documents** folder, then **BTD6 Benchmarks**. The newest
+   `benchmark-*.csv` is closed and can be copied immediately while the game stays open.
+6. Reload the same starting save and repeat. Each run receives a unique filename.
+
+The hotkey is configurable in Mod Helper settings under **Benchmark Hotkey**.
+Choose an unused key if F8 conflicts with another mod. The mod observes the key;
+it does not suppress other bindings. **Start Benchmark** and **Stop And Save Benchmark**
+buttons are also available in those settings, but opening menus adds menu time.
+Overlay instructions refer to the default F8 key; use your chosen key if rebound.
+Logging does not need to be enabled. Recording works even with the overlay hidden.
+
+Each CSV contains `sample`, `elapsed_ms` and `frame_interval_ms`. It contains no
+save data, account data or automatic hardware inventory. Filenames use UTC time
+and a unique suffix. Windows may redirect Documents into OneDrive; use the actual
+Documents folder rather than assuming it is under your user profile. Any cloud
+sync configured for that folder is controlled by Windows/OneDrive, not this mod.
+
+Recording uses a fixed buffer of 120,000 intervals (under 1 MB). It automatically
+stops and saves at that limit or after an observed interval reaches ten minutes
+of recording, whichever occurs first. Writing happens synchronously after stopping
+and may briefly stall that moment; it is outside the saved measurement. No disk
+writes occur during collection. A full-disk or permission error retains the run in
+memory: correct the problem and press Stop And Save again. Do not use a partial
+CSV left by a failed save. New recordings cannot replace an unsaved run.
+
+Pauses, menus, loading and loss of focus are not automatically excluded. Stop
+before reloading or pausing and record the round/speed/settings separately. This
+is frame-interval capture, not profiling of individual game calculations. Stop
+and save before quitting: an unfinished run in memory is lost on exit or crash.
+
+The 0.3.0 Release build and recorder checks passed; its hotkey and settings UI
+still need in-game validation. The 0.2.0 overlay was confirmed working by the owner.

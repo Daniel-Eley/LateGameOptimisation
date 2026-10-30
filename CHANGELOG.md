@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 - Unreleased
+
+- Add F8 start/stop recording and Mod Helper settings buttons.
+- Save closed, uniquely named numerical CSVs under Documents/BTD6 Benchmarks.
+- Bound recordings and preserve unsaved data for retry after write failures.
+- Add recorder tests; build and automated checks passed, in-game validation pending.
+
 ## 0.2.0 - Unreleased
 
 - Add a default-on, non-interactive in-game diagnostics overlay with AI disclosure.

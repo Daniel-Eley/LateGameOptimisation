@@ -6,5 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../FrameTimeWindow.cs" Link="FrameTimeWindow.cs" />
+    <Compile Include="../BenchmarkRecorder.cs" Link="BenchmarkRecorder.cs" />
   </ItemGroup>
 </Project>
