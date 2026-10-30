@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 - Unreleased
+
+- Add a default-on, non-interactive in-game diagnostics overlay with AI disclosure.
+- Keep log output separately opt-in and refresh displayed values twice per second.
+- Build and standalone statistics checks pass; in-game visual validation remains pending.
+
 ## 0.1.0 - Unreleased
 
 - Disclose substantial AI involvement in the README, mod description and distribution template.

@@ -73,3 +73,18 @@ All standalone diagnostics checks passed. The game was not launched for validati
 installation, settings display, log output and gameplay compatibility remain untested.
 The Thunderstore configuration is a template only; its team and dependency minimums
 must be checked before any use. No Thunderstore publication is configured in CI.
+
+## In-game overlay (0.2.0)
+
+ShowDiagnosticsOverlay is a new Mod Helper boolean setting, defaulting to true.
+It enables sampling independently of the existing opt-in log setting. OnUpdate
+formats a cached display string at most twice per second, plus at the ten-second
+report boundary. OnGUI draws a box and label only during repaint events using
+MelonLoader's Unity IMGUI callback, so no scene-specific UI objects, input handlers
+or gameplay patches are needed. A UI exception disables the overlay for the session
+and logs one message. Hiding the overlay and disabling logging stops sampling.
+
+The local Release build and statistics checks passed for 0.2.0. Visual rendering
+and interaction in the actual game have not yet been verified. The explicit UI
+references match the locally installed IL2CPP assemblies. The diagnostic overlay
+is the user-requested UI addition; gameplay graphics and effects remain unchanged.

@@ -3,6 +3,7 @@ using BTD_Mod_Helper;
 using BTD_Mod_Helper.Api.ModOptions;
 using MelonLoader;
 using LateGameOptimisation;
+using UnityEngine;
 
 [assembly: MelonInfo(typeof(LateGameOptimisation.LateGameOptimisation), ModHelperData.Name, ModHelperData.Version, ModHelperData.RepoOwner)]
 [assembly: MelonGame("Ninja Kiwi", "BloonsTD6")]
@@ -14,8 +15,15 @@ public class LateGameOptimisation : BloonsTD6Mod
 {
     // Exposed in Mod Helper's settings. Off by default: no periodic logging.
     public static readonly ModSettingBool EnableFrameTiming = new(false);
+    // A separate new setting means old saved logging preferences cannot hide
+    // the display on the first launch of this version. Logging stays opt-in.
+    public static readonly ModSettingBool ShowDiagnosticsOverlay = new(true);
     private readonly FrameTimeWindow window = new();
     private long previousTimestamp;
+    private long nextDisplayTimestamp;
+    private string displayText = "LateGameOptimisation | Diagnostics\nCollecting frame intervals...\nDeveloped with OpenAI Codex (AI)";
+    private GUIStyle? overlayStyle;
+    private bool overlayFailed;
 
     public override void OnApplicationStart()
     {
@@ -25,10 +33,12 @@ public class LateGameOptimisation : BloonsTD6Mod
     public override void OnUpdate()
     {
         // Main-thread callback intervals, NOT CPU timings of game methods.
-        if (!EnableFrameTiming)
+        if (!EnableFrameTiming && (!ShowDiagnosticsOverlay || overlayFailed))
         {
             previousTimestamp = 0;
             window.Reset();
+            nextDisplayTimestamp = 0;
+            displayText = "LateGameOptimisation | Diagnostics\nCollecting frame intervals...\nDeveloped with OpenAI Codex (AI)";
             return;
         }
 
@@ -36,10 +46,23 @@ public class LateGameOptimisation : BloonsTD6Mod
         if (previousTimestamp != 0)
         {
             double milliseconds = (now - previousTimestamp) * 1000.0 / Stopwatch.Frequency;
-            if (window.Add(milliseconds))
+            bool reportReady = window.Add(milliseconds);
+            // Formatting allocates strings: refresh twice a second, not once
+            // per frame or GUI event. Keep the last report until the next one.
+            if (now >= nextDisplayTimestamp || reportReady)
+            {
+                displayText = $"LateGameOptimisation | Diagnostics\n" +
+                    $"{window.FramesPerSecond:F1} FPS (update callbacks)\n" +
+                    $"Frame mean: {window.Mean:F2} ms   Max: {window.Maximum:F2} ms\n" +
+                    $"Window: {window.Total / 1000:F1} / 10 s   Samples: {window.Count}\n" +
+                    "Includes menus / pauses / loading\n" +
+                    "Developed with OpenAI Codex (AI)";
+                nextDisplayTimestamp = now + Stopwatch.Frequency / 2;
+            }
+            if (reportReady)
             {
                 // One summary per ten seconds; no account or save data recorded.
-                ModHelper.Msg<LateGameOptimisation>(
+                if (EnableFrameTiming) ModHelper.Msg<LateGameOptimisation>(
                     $"Frame intervals: {window.Count} samples, mean {window.Mean:F2} ms, " +
                     $"max {window.Maximum:F2} ms, {window.FramesPerSecond:F1} callbacks/s. " +
                     "Includes menus, pauses and loading; not simulation profiling.");
@@ -47,5 +70,37 @@ public class LateGameOptimisation : BloonsTD6Mod
             }
         }
         previousTimestamp = now;
+    }
+
+    public override void OnGUI()
+    {
+        // IMGUI is drawn by MelonLoader across scene changes. Repaint-only
+        // drawing has no buttons, focus, input handling or gameplay hooks.
+        if (!ShowDiagnosticsOverlay || overlayFailed)
+            return;
+
+        try
+        {
+            if (Event.current == null || Event.current.type != EventType.Repaint) return;
+            overlayStyle ??= new GUIStyle()
+            {
+                alignment = TextAnchor.UpperLeft,
+                fontSize = 14,
+                wordWrap = true
+            };
+            // Bottom-left keeps the overlay away from the top resource bar.
+            // Screen-relative bounds also adapt to window-size changes.
+            float width = Mathf.Min(390, Screen.width - 16);
+            float top = Mathf.Max(8, Screen.height - 158);
+            GUI.Box(new Rect(8, top, width, 150), "");
+            overlayStyle.normal.textColor = Color.white;
+            GUI.Label(new Rect(18, top + 8, width - 20, 134), displayText, overlayStyle);
+        }
+        catch (System.Exception exception)
+        {
+            // A UI failure must not repeatedly throw during gameplay.
+            overlayFailed = true;
+            ModHelper.Msg<LateGameOptimisation>($"Diagnostics overlay disabled after UI error: {exception.Message}");
+        }
     }
 }

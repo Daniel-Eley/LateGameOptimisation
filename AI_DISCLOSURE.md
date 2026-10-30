@@ -15,3 +15,7 @@ AI-generated code can contain mistakes. The owner directing development is not e
 ## Continuing disclosure
 
 Keep the README disclosure prominent. Contributor change descriptions should identify material AI-generated or AI-assisted code, tests, documentation and design work, alongside the review and validation actually performed. Update this record when the scope changes. Include an AI-development disclosure and a link to this file in release notes and distribution listings so binary-only downloaders can see it too. Do not describe generated work as independently human-written or human-audited unless that is accurate.
+
+The 0.2.0 diagnostics overlay, its settings integration and accompanying documentation
+were also generated with Codex. It has been compiled against the local game assemblies;
+no independent human audit or in-game visual validation is claimed.

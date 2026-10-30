@@ -1,6 +1,6 @@
 # LateGameOptimisation
 
-An experimental BTD6 mod investigating late-game performance. **Version 0.1.0 is a diagnostics foundation, not a performance improvement or a multicore simulation mod.** It does not change targeting, damage, projectiles or game speed. In-game compatibility has not yet been tested.
+An experimental BTD6 mod investigating late-game performance. **Version 0.2.0 is a diagnostics foundation, not a performance improvement or a multicore simulation mod.** It does not change targeting, damage, projectiles or game speed. In-game compatibility has not yet been tested.
 
 **AI development disclosure:** This project is developed with OpenAI Codex. AI generated the initial custom diagnostic code, tests, documentation and workflow changes from the Mod Helper template, under Daniel Eley's direction. This is substantial AI involvement, not just autocomplete. See [AI_DISCLOSURE.md](AI_DISCLOSURE.md) for scope and validation limits.
 
@@ -14,7 +14,9 @@ This is a project requirement, not a claim of proven compatibility. The current 
 
 ## What currently works in the source
 
-Enable **Enable Frame Timing** in Mod Helper's mod settings to collect frame callback intervals. About every ten seconds, the MelonLoader log receives sample count, average interval, longest interval and callbacks per second. Turn the setting off to discard the current window. Collection is off by default.
+**Show Diagnostics Overlay** is enabled by default in Mod Helper settings. A non-interactive bottom-left panel shows callback FPS, mean and maximum frame interval, elapsed window time and sample count. Text refreshes twice per second; statistics reset every ten seconds. It appears in menus and gameplay after the loader initializes. Disable that setting to hide it.
+
+**Enable Frame Timing** separately enables ten-second summaries in the MelonLoader log and remains off by default. Sampling runs while either the overlay or logging is enabled. Turn both off to stop sampling and discard the window. The overlay does not capture input or modify gameplay state; drawing it adds some overhead.
 
 These numbers include menus, loading, pauses and background-window stalls. They do not tell us which method is slow, how much CPU a method uses, or how fast simulation time progresses. Logging itself has a small cost. Compare like-for-like gameplay and use a profiler before choosing an optimisation.
 
