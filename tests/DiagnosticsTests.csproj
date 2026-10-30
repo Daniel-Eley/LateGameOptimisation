@@ -7,5 +7,6 @@
   <ItemGroup>
     <Compile Include="../FrameTimeWindow.cs" Link="FrameTimeWindow.cs" />
     <Compile Include="../BenchmarkRecorder.cs" Link="BenchmarkRecorder.cs" />
+    <Compile Include="../DetailTimings.cs" Link="DetailTimings.cs" />
   </ItemGroup>
 </Project>

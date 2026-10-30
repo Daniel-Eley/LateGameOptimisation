@@ -15,6 +15,7 @@ internal static class SimulationProfiler
     private static int calls;
     [ThreadStatic] private static int depth;
     public static bool Installed { get; private set; }
+    public static bool InSimulation => depth > 0;
     public static bool Recording { get; set; }
 
     public static void Install()

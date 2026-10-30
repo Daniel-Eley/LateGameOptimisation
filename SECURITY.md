@@ -26,3 +26,9 @@ arguments, return values and exceptions. No simulation hook is installed with
 profiling disabled at startup. The method timing adds overhead and depends on
 version-specific native interception. Lifecycle markers read notifications only.
 CSV files now also contain timing totals, call counts and state/event labels.
+
+Version 0.5.0 adds an independently opt-in, restart-required DetailedProfiler.
+It installs four observational native-method hooks in addition to the broad timer.
+The exact methods and coverage limits are listed in README.md. It introduces no
+network access, additional output directories or gameplay mutations. Harmony hooks
+still carry compatibility and instrumentation risks; build success is not an audit.

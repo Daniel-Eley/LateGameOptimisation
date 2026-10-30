@@ -27,3 +27,8 @@ in-game recorder validation is still pending.
 The 0.4.0 lifecycle markers, automatic round-end recording stop, optional
 simulation timing hook and related tests/documentation were generated with Codex.
 Local build and recorder tests are not verification of native hook interception.
+
+The 0.5.0 four-entry-point profiler, detailed CSV fields, tests and documentation
+were generated with Codex after inspecting the installed game's assembly metadata.
+No proprietary game assemblies are included in the repository. Native hook
+coverage and overhead remain subject to in-game validation.

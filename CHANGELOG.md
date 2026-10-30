@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0 - Unreleased
+
+- Add opt-in detailed timing for collision, attack targeting, weapon and bloon entry points.
+- Record per-frame inclusive timings, observed call counts and an installed-probe bitmask.
+- Keep original execution intact; document overlap, partial coverage and profiling overhead.
+- Build and extended CSV tests pass; new hooks require in-game verification.
+
 ## 0.4.0 - Unreleased
 
 - Add lifecycle/state event rows and stop recordings at round end, match end or restart.

@@ -21,6 +21,7 @@ public class LateGameOptimisation : BloonsTD6Mod
     // the display on the first launch of this version. Logging stays opt-in.
     public static readonly ModSettingBool ShowDiagnosticsOverlay = new(true);
     public static readonly ModSettingBool EnableSimulationProfiling = new(false) { requiresRestart = true };
+    public static readonly ModSettingBool EnableDetailedProfiling = new(false) { requiresRestart = true };
     private string gameState = "unknown";
     private bool stateChanged;
     private string stateBeforePause = "unknown";
@@ -43,10 +44,15 @@ public class LateGameOptimisation : BloonsTD6Mod
     public override void OnApplicationStart()
     {
         instance = this;
-        if (EnableSimulationProfiling)
+        if (EnableSimulationProfiling || EnableDetailedProfiling)
         {
             try { SimulationProfiler.Install(); }
             catch (Exception error) { ModHelper.Msg<LateGameOptimisation>($"Simulation profiling unavailable: {error.Message}"); }
+        }
+        if (EnableDetailedProfiling && SimulationProfiler.Installed)
+        {
+            try { DetailedProfiler.Install(); }
+            catch (Exception error) { ModHelper.Msg<LateGameOptimisation>($"Detailed profiling setup error: {error.Message}"); }
         }
         ModHelper.Msg<LateGameOptimisation>("Diagnostics prototype loaded. No gameplay optimisations enabled.");
     }
@@ -74,7 +80,7 @@ public class LateGameOptimisation : BloonsTD6Mod
             long timestamp = Stopwatch.GetTimestamp();
             var profile = SimulationProfiler.Drain();
             if (recordingTimestamp != 0 && recorder.Add((timestamp - recordingTimestamp) * 1000.0 / Stopwatch.Frequency,
-                    stateChanged ? "transition" : (!focused ? "unfocused" : gameState), profile.Milliseconds, profile.Calls))
+                    stateChanged ? "transition" : (!focused ? "unfocused" : gameState), profile.Milliseconds, profile.Calls, DetailedProfiler.Drain()))
                 StopAndSave();
             stateChanged = false;
             recordingTimestamp = timestamp;
@@ -102,7 +108,7 @@ public class LateGameOptimisation : BloonsTD6Mod
                     $"{window.FramesPerSecond:F1} FPS (update callbacks)\n" +
                     $"Frame mean: {window.Mean:F2} ms   Max: {window.Maximum:F2} ms\n" +
                     $"Window: {window.Total / 1000:F1} / 10 s   Samples: {window.Count}\n" +
-                    $"State: {gameState} | Profile: {(SimulationProfiler.Installed ? "on" : "off")}\n" +
+                    $"State: {gameState} | Profile: {(SimulationProfiler.Installed ? "on" : "off")} | Detail: {DetailedProfiler.InstalledMask}/15\n" +
                     "Developed with OpenAI Codex (AI)";
                 nextDisplayTimestamp = now + Stopwatch.Frequency / 2;
             }
@@ -123,6 +129,9 @@ public class LateGameOptimisation : BloonsTD6Mod
     {
         if (!recorder.Start()) return;
         recorder.ProfileEnabled = SimulationProfiler.Installed;
+        recorder.DetailedMask = DetailedProfiler.InstalledMask;
+        DetailedProfiler.Drain();
+        recorder.Mark("detailed_" + DetailedProfiler.Status);
         recorder.Mark("initial_state_" + gameState);
         SimulationProfiler.Drain();
         SimulationProfiler.Recording = true;
@@ -161,7 +170,7 @@ public class LateGameOptimisation : BloonsTD6Mod
             long now = Stopwatch.GetTimestamp();
             var profile = SimulationProfiler.Drain();
             if (recordingTimestamp != 0) recorder.Add((now - recordingTimestamp) * 1000.0 / Stopwatch.Frequency,
-                "transition", profile.Milliseconds, profile.Calls);
+                "transition", profile.Milliseconds, profile.Calls, DetailedProfiler.Drain());
             recorder.Stop(marker + "_stop");
             SimulationProfiler.Recording = false;
             saveRequested = true;

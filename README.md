@@ -1,6 +1,6 @@
 # LateGameOptimisation
 
-An experimental BTD6 mod investigating late-game performance. **Version 0.4.0 is a diagnostics foundation, not a performance improvement or a multicore simulation mod.** It does not change targeting, damage, projectiles or game speed. In-game compatibility has not yet been tested.
+An experimental BTD6 mod investigating late-game performance. **Version 0.5.0 is a diagnostics foundation, not a performance improvement or a multicore simulation mod.** It does not change targeting, damage, projectiles or game speed. In-game compatibility has not yet been tested.
 
 **AI development disclosure:** This project is developed with OpenAI Codex. AI generated the initial custom diagnostic code, tests, documentation and workflow changes from the Mod Helper template, under Daniel Eley's direction. This is substantial AI involvement, not just autocomplete. See [AI_DISCLOSURE.md](AI_DISCLOSURE.md) for scope and validation limits.
 
@@ -142,3 +142,42 @@ Disable profiling and restart to remove the hook for ordinary benchmarks.
 The Release build and standalone recorder tests passed. Round/pause hooks and
 native simulation interception still require validation in the running game.
 No claim of measured simulation cost or gameplay-equivalence testing is made yet.
+
+## Detailed simulation probes (0.5.0)
+
+Enable **Enable Detailed Profiling** in Mod Helper settings, then restart BTD6.
+This also enables the broad simulation timer even if Enable Simulation Profiling
+is off. The overlay's **Detail: 15/15** means all four selected hooks installed;
+it is a bitmask, not a percentage. A smaller value means incomplete coverage:
+1 = collision, 2 = targeting, 4 = weapons, 8 = bloons (sum the installed bits).
+Installation alone does not prove the game executes an intercepted method.
+
+Record one round-300 run first, starting with F8 before the round. Let round-end
+automatically save it. Check the CSV call counts before repeating runs. The CSV
+adds detailed_mask and four timing/count pairs:
+
+| Columns | Exact method observed |
+| --- | --- |
+| collision_ms / collision_calls | CollisionChecker.Process |
+| target_ms / target_calls | Attack.FindTarget |
+| weapon_ms / weapon_calls | Weapon.Process |
+| bloon_ms / bloon_calls | Bloon.Process |
+
+Only outermost calls of each category on the main thread, nested within the
+observed Simulation.Simulate call, are measured. Specialized behavior can bypass
+these methods; labels are entry-point timings, not complete subsystem totals.
+Zero calls means no calls observed through that probe, not zero subsystem cost.
+
+Times are inclusive and can overlap across categories. Never sum them or subtract
+their sum from simulation time. Wrapper/interop and clock-reading overhead can
+be substantial for frequently called methods, even though only four entry points
+are instrumented. Compare broad-only runs against detailed runs before making
+performance claims; treat this mode as a diagnostic experiment, not an optimisation.
+The rest of the simulation remains unmeasured at this level.
+
+Turn **Enable Detailed Profiling** off and restart to return to broad-only profiling.
+Turn both profiling settings off and restart for an uninstrumented benchmark.
+No original method is skipped and no arguments, return values, game state or
+exceptions are changed. The new native hooks have not yet been verified in-game.
+Build and CSV checks passed, including detailed values, schema alignment and buffer
+reuse. Your existing CSV files are unchanged.

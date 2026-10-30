@@ -126,3 +126,21 @@ profiling. Runtime interception still needs in-game verification using nonzero
 call counts. A passing build does not establish interception or performance.
 Frame context and profile fields use fixed buffers; events have a bounded buffer.
 Baseline and profiling runs must be compared because patch overhead is nonzero.
+
+## DetailedProfiler design (0.5.0)
+
+The installed Assembly-CSharp metadata was inspected to select four concrete,
+declared entry points: CollisionChecker.Process, Attack.FindTarget, Weapon.Process
+and Bloon.Process. Installation refuses ambiguous or missing methods independently
+and records an installed bitmask. Each successful method receives its own prefix
+and void finalizer under a separate Harmony owner. No patch attributes cause
+automatic installation. The broad timer is required as the nesting boundary.
+
+Hot callbacks use a constant category index rather than MethodBase dictionary
+lookups. Main-thread/category recursion counters avoid double-counting a nested
+call of the same category; cross-category inclusive overlap is retained and must
+be disclosed. Counters are drained once per recorded frame. DetailTimings is a
+value type stored in a fixed-capacity buffer. Four timers do not mean low overhead:
+these methods can run many times per simulation tick. Native interception and
+measurement distortion must be evaluated using a single test before further runs.
+The probes do not identify projectile movement or all specialized targeting paths.
