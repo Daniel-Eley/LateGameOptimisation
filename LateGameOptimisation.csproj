@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>LateGameOptimisation</RootNamespace>
+    <AssemblyName>LateGameOptimisation</AssemblyName>
+    <Nullable>enable</Nullable>
+    <LangVersion>10.0</LangVersion>
+    <PlatformTarget>x64</PlatformTarget>
+    <Optimize Condition="'$(Configuration)' == 'Release'">true</Optimize>
+    <Deterministic>true</Deterministic>
+    <DebugType>embedded</DebugType>
+    <!-- Override with -p:BloonsTD6="your game folder". No automatic install. -->
+    <BloonsTD6 Condition="'$(BloonsTD6)' == ''">C:\Program Files (x86)\Steam\steamapps\common\BloonsTD6</BloonsTD6>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
+    <Reference Include="MelonLoader" HintPath="$(BloonsTD6)/MelonLoader/net6/MelonLoader.dll" Private="false" />
+    <Reference Include="Btd6ModHelper" HintPath="$(BloonsTD6)/Mods/Btd6ModHelper.dll" Private="false" />
+    <Reference Include="Il2CppInterop.Runtime" HintPath="$(BloonsTD6)/MelonLoader/net6/Il2CppInterop.Runtime.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(BloonsTD6)/MelonLoader/Il2CppAssemblies/UnityEngine.CoreModule.dll" Private="false" />
+  </ItemGroup>
+  <Target Name="CheckLocalDependencies" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(BloonsTD6)/Mods/Btd6ModHelper.dll')" Text="Install Mod Helper in Mods, or set -p:BloonsTD6 to the correct game folder." />
+  </Target>
+</Project>
