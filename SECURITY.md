@@ -18,4 +18,4 @@ Review changes to workflows as executable code. CI has read-only contents permis
 
 No supported production release exists yet. Before a release, record build inputs, run integration tests and publish a source commit plus DLL SHA-256 checksum. Only claim compatibility for versions actually tested.
 
-Once the public GitHub repository exists, enable GitHub private vulnerability reporting in repository settings. Until enabled, do not post credentials or exploitable sensitive details in public issues. Ordinary bugs can be filed as issues without personal data.
+Private vulnerability reporting is enabled. Use https://github.com/Daniel-Eley/LateGameOptimisation/security/advisories/new to report security issues privately. Do not post credentials or exploitable sensitive details in public issues. Ordinary bugs can be filed as issues without personal data.
