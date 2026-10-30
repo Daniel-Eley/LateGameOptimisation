@@ -2,6 +2,16 @@
 
 An experimental BTD6 mod investigating late-game performance. **Version 0.1.0 is a diagnostics foundation, not a performance improvement or a multicore simulation mod.** It does not change targeting, damage, projectiles or game speed. In-game compatibility has not yet been tested.
 
+**AI development disclosure:** This project is developed with OpenAI Codex. AI generated the initial custom diagnostic code, tests, documentation and workflow changes from the Mod Helper template, under Daniel Eley's direction. This is substantial AI involvement, not just autocomplete. See [AI_DISCLOSURE.md](AI_DISCLOSURE.md) for scope and validation limits.
+
+## Strict gameplay preservation requirement
+
+Performance is the only permitted gameplay-facing change. Optimisations must preserve the unmodified game's rules, simulation timing, targeting, damage, collisions, random-number sequence, economy, progression and outcomes for the same starting state and inputs at the same simulation ticks. Visual effects, audio and controls must also be preserved; reducing quality or removing projectiles is not an acceptable shortcut.
+
+Smoother rendering and less real-world waiting from reduced lag are intended. Changing simulation speed, skipping updates, approximating results or changing the order of gameplay events is prohibited. If a proposed optimisation cannot meet this requirement, it must remain disabled and the original game calculation must run. Multicore execution is a possible technique, never a reason to compromise correctness.
+
+This is a project requirement, not a claim of proven compatibility. The current source only measures callback intervals and logs summaries; it does not patch or write gameplay state. In-game parity remains untested, and optional diagnostics add some overhead.
+
 ## What currently works in the source
 
 Enable **Enable Frame Timing** in Mod Helper's mod settings to collect frame callback intervals. About every ten seconds, the MelonLoader log receives sample count, average interval, longest interval and callbacks per second. Turn the setting off to discard the current window. Collection is off by default.

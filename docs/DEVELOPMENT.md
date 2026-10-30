@@ -14,6 +14,21 @@ The tests compile the same FrameTimeWindow.cs into a tiny standalone console pro
 
 ## Research plan and acceptance gates
 
+### Mandatory gameplay equivalence
+
+Every stage below is subject to the owner's strict requirement: performance may improve, but gameplay must not change. For the same initial state, random seed and inputs at the same simulation ticks, preserve all gameplay-relevant state and observable behavior. Compare against the same game and dependency versions with the optimisation disabled. A stable new ordering is insufficient: preserve the original ordering wherever it can affect results.
+
+- Preserve targeting priorities and ties, damage, pierce, collision results, movement, spawn order, abilities, buffs, cooldowns, cash, lives, rewards, progression and save behavior.
+- Preserve random draws and their order, simulation step size, speed settings and input semantics. Do not lower update frequency, batch hits with changed semantics, use stale results, simplify collisions or approximate floating-point calculations. Reordering floating-point operations can change outcomes and must not be assumed harmless.
+- Preserve graphics, effects, animations and audio. Disabling them is a quality change, not an acceptable optimisation for this project.
+- Worker results must belong to the exact state and tick in which they are applied. If results are unavailable or invalid, run the original calculation exactly once before any replacement mutation; never skip a tick or apply both paths. Disable an unsupported patch before it affects gameplay. A fallback cannot undo already-corrupted state.
+- Test serial and parallel paths against the unmodified calculation, including ties, boundary conditions, repeated seeds, long runs, different worker counts, delayed workers, save/reload and scene changes. Compare gameplay state and event order at each simulation tick, not only final scores or FPS. Any unexplained divergence blocks integration or release; numerical tolerances must not excuse gameplay differences.
+- Keep gameplay patches off in unvalidated game versions or modes, including co-op. Compatibility with arbitrary other mods cannot be assumed. Publish exactly which combinations were tested and leave unsupported optimisations disabled.
+
+These are acceptance criteria for future work. The current statistics checks do not implement or satisfy a gameplay-equivalence test suite. Prefer abandoning an optimisation over relaxing these criteria.
+
+### Stages
+
 1. **Baseline:** use a fixed map, save, tower layout, round, resolution and game speed. Record CPU, game, loader and Mod Helper versions. Warm up the game, then repeat comparable runs at least three times. Compare no mod, diagnostics disabled and diagnostics enabled. Do not treat menu/loading intervals as gameplay samples.
 2. **Find the bottleneck:** use a profiler that can attribute native/IL2CPP and managed CPU time where possible. Frame intervals alone cannot distinguish simulation, rendering, garbage collection, VSync or a frame cap. Record round completion wall time as well as frame behavior.
 3. **Choose one candidate:** inspect its actual current-game implementation and all shared-state access. A possible research area is spatial candidate filtering, but it is not an approved patch. Preserve camo rules, range rules, priorities, ordering and ties. Retaining a vanilla targeting call afterward might eliminate any saving.
@@ -39,6 +54,8 @@ Release builds enable compiler optimisation and deterministic compilation. Deter
 The initial workflow runs game-independent checks with read-only repository permissions, pinned action revisions and no persisted checkout credentials. Full mod builds remain local until a reviewed source for compatible build dependencies is established.
 
 For each future release, record the exact commit, SDK, dependency versions and dependency hashes. Build from a clean checkout, test in-game, calculate a SHA-256 hash with Get-FileHash, then publish a manually reviewed release. Do not upload game assemblies or private logs. A checksum detects changed bytes; on its own it does not authenticate who built them.
+
+Follow [the AI disclosure policy](../AI_DISCLOSURE.md) in contributions, release notes and distribution listings. Report AI involvement and actual validation without implying an independent human review occurred.
 
 ## References
 

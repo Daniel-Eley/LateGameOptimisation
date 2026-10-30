@@ -1,7 +1,7 @@
 [package]
 name = "LateGameOptimisation" # The Thunderstore package name. This should usually match your mod name (no spaces).
 namespace = "Daniel-Eley" # The Thunderstore team that owns the package. Create this team on Thunderstore first.
-description = "Experimental frame-time diagnostics; no gameplay optimisation yet." # Short description shown on Thunderstore package listings. Max 256 characters
+description = "Developed with OpenAI Codex (AI). Experimental diagnostics; no gameplay optimisation yet. Gameplay preservation required; in-game compatibility untested." # Short description shown on Thunderstore package listings. Max 256 characters
 websiteUrl = "https://github.com/Daniel-Eley/LateGameOptimisation" # Optional project URL shown on Thunderstore. Your GitHub repository is a good default.
 
 # Thunderstore package dependencies use the format Namespace-PackageName = "version".
