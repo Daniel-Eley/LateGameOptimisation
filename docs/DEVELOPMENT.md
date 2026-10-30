@@ -106,3 +106,23 @@ is implemented. Users must stop and save before exit. Tests cover exact CSV rows
 comma-decimal locales, exclusive reopen after saving, failed-save retry, repeated
 sessions and both automatic bounds. The overlay remains drawing-only; hotkey
 observation and settings buttons are the explicit recording controls.
+
+## Version 0.4.0 diagnostic scope
+
+Mod Helper lifecycle overrides label state transitions. Match-start state is
+unknown rather than inferring active gameplay from a loaded save. Start the
+recording before round start to observe that boundary. Focus is polled each update;
+other mods may pause simulation without opening a pause menu. These limitations
+must remain visible in analysis. Event elapsed times use the recording clock.
+Round end captures a final partial transition interval and stops collection in
+the hook, then defers disk I/O until OnUpdate. There is no native replay or
+per-tick gameplay comparison yet.
+
+SimulationProfiler is manually installed only when enabled at startup. A void
+prefix/finalizer measures outermost main-thread Simulate calls while recording,
+without controlling original execution. An ambiguous method disables installation.
+There are no patch attributes, so ordinary automatic patch discovery cannot enable
+profiling. Runtime interception still needs in-game verification using nonzero
+call counts. A passing build does not establish interception or performance.
+Frame context and profile fields use fixed buffers; events have a bounded buffer.
+Baseline and profiling runs must be compared because patch overhead is nonzero.

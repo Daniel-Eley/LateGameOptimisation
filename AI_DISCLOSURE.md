@@ -23,3 +23,7 @@ no independent human audit or in-game visual validation is claimed.
 The 0.3.0 bounded benchmark recorder, CSV export, hotkey/settings controls and
 recorder tests were generated with Codex. Build and automated tests passed;
 in-game recorder validation is still pending.
+
+The 0.4.0 lifecycle markers, automatic round-end recording stop, optional
+simulation timing hook and related tests/documentation were generated with Codex.
+Local build and recorder tests are not verification of native hook interception.

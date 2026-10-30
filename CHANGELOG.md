@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 - Unreleased
+
+- Add lifecycle/state event rows and stop recordings at round end, match end or restart.
+- Add opt-in, restart-required main-thread Simulation.Simulate elapsed timing.
+- Label transition/unknown/unfocused intervals and retain explicit stop reasons.
+- Extend CSV checks; native interception and lifecycle hooks need in-game validation.
+
 ## 0.3.0 - Unreleased
 
 - Add F8 start/stop recording and Mod Helper settings buttons.

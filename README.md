@@ -1,6 +1,6 @@
 # LateGameOptimisation
 
-An experimental BTD6 mod investigating late-game performance. **Version 0.3.0 is a diagnostics foundation, not a performance improvement or a multicore simulation mod.** It does not change targeting, damage, projectiles or game speed. In-game compatibility has not yet been tested.
+An experimental BTD6 mod investigating late-game performance. **Version 0.4.0 is a diagnostics foundation, not a performance improvement or a multicore simulation mod.** It does not change targeting, damage, projectiles or game speed. In-game compatibility has not yet been tested.
 
 **AI development disclosure:** This project is developed with OpenAI Codex. AI generated the initial custom diagnostic code, tests, documentation and workflow changes from the Mod Helper template, under Daniel Eley's direction. This is substantial AI involvement, not just autocomplete. See [AI_DISCLOSURE.md](AI_DISCLOSURE.md) for scope and validation limits.
 
@@ -83,7 +83,7 @@ and a unique suffix. Windows may redirect Documents into OneDrive; use the actua
 Documents folder rather than assuming it is under your user profile. Any cloud
 sync configured for that folder is controlled by Windows/OneDrive, not this mod.
 
-Recording uses a fixed buffer of 120,000 intervals (under 1 MB). It automatically
+Recording uses fixed buffers for 120,000 intervals and their diagnostic fields. It automatically
 stops and saves at that limit or after an observed interval reaches ten minutes
 of recording, whichever occurs first. Writing happens synchronously after stopping
 and may briefly stall that moment; it is outside the saved measurement. No disk
@@ -98,3 +98,47 @@ and save before quitting: an unfinished run in memory is lost on exit or crash.
 
 The 0.3.0 Release build and recorder checks passed; its hotkey and settings UI
 still need in-game validation. The 0.2.0 overlay was confirmed working by the owner.
+
+## Round markers and simulation profiling (0.4.0)
+
+This supersedes the 0.3.0 CSV schema and round-end behavior described above.
+For comparable runs, load the same round-300 starting save, press F8 **before
+starting the round**, then start it at built-in 3x. Recording now stops and saves
+when Mod Helper reports round end. Match end and restart also stop and save.
+Wait for Saved before starting another recording. The game itself is not paused,
+restarted or otherwise controlled by this mod.
+
+Round start/end, match start/end, restart, pause-menu open/close and sampled
+window-focus changes are recorded as event rows. State begins as unknown until
+a relevant hook is observed; starting mid-round may leave it unknown. Pause-menu
+hooks do not detect every possible pause imposed by other mods. Do not interpret
+unknown as active. A frame crossing a state change is labelled transition.
+Use active_round frame rows for the active interval analysis; preserve transition
+rows and round markers separately to assess the boundary. Event rows follow frame
+rows in the file and must be sorted by elapsed_ms to create a timeline.
+
+CSV columns: record_type, sample, elapsed_ms, frame_interval_ms, state, event,
+simulation_ms, simulation_calls, profiling_enabled. Old CSVs remain unchanged.
+Times are wall-clock milliseconds. The event buffer is bounded at 4,096 entries;
+its last slot signals event_capacity_reached if full. Collection is not a replay
+and does not record game inputs or full state.
+
+For a second, diagnostic run, enable **Enable Simulation Profiling** in this mod's
+settings and restart BTD6. Confirm the overlay says **Profile: on**. Repeat the
+same round. Profiling installs an observational Harmony prefix/finalizer on the
+installed Simulation.Simulate method. It does not skip the method, modify its
+arguments/results, or suppress its exceptions. Only main-thread outermost calls
+are timed, avoiding double-counting recursive calls. Other threads are excluded.
+
+simulation_ms is inclusive elapsed time in the method during that sample, not
+CPU time, and can include waiting and other mods' work. simulation_calls indicates
+whether calls were actually observed. Zero calls is not evidence that simulation
+costs nothing: the hook may not intercept the native path in this game version.
+Do not add these times to frame time or label the remainder rendering time.
+Profiler overhead affects measurements; compare on/off runs before interpreting
+results. This is a broad first measurement, not a targeting/collision breakdown.
+Disable profiling and restart to remove the hook for ordinary benchmarks.
+
+The Release build and standalone recorder tests passed. Round/pause hooks and
+native simulation interception still require validation in the running game.
+No claim of measured simulation cost or gameplay-equivalence testing is made yet.

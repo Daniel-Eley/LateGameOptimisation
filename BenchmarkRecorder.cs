@@ -11,9 +11,25 @@ namespace LateGameOptimisation;
 /// </summary>
 internal sealed class BenchmarkRecorder
 {
-    public const int Capacity = 120_000; // Under 1 MB of doubles.
+    public const int Capacity = 120_000; // Fixed-size buffers; no per-frame growth.
     public const double DurationLimitMs = 600_000;
     private readonly double[] intervals = new double[Capacity];
+    private readonly string[] states = new string[Capacity];
+    private readonly double[] simulationMs = new double[Capacity];
+    private readonly int[] simulationCalls = new int[Capacity];
+    private readonly string[] events = new string[4096];
+    private readonly double[] eventTimes = new double[4096];
+    private int eventCount;
+    private long started;
+    public bool ProfileEnabled { get; set; }
+
+    public void Mark(string name)
+    {
+        if (!IsRecording || eventCount == events.Length) return;
+        if (eventCount == events.Length - 1) name = "event_capacity_reached";
+        events[eventCount] = name;
+        eventTimes[eventCount++] = (System.Diagnostics.Stopwatch.GetTimestamp() - started) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+    }
     public bool IsRecording { get; private set; }
     public bool HasPendingSave { get; private set; }
     public int Count { get; private set; }
@@ -25,23 +41,30 @@ internal sealed class BenchmarkRecorder
         if (IsRecording || HasPendingSave) return false;
         Count = 0;
         ElapsedMs = 0;
+        eventCount = 0;
+        started = System.Diagnostics.Stopwatch.GetTimestamp();
         IsRecording = true;
+        Mark("recording_start");
         return true;
     }
 
-    public bool Add(double milliseconds)
+    public bool Add(double milliseconds, string state = "unknown", double simulationMilliseconds = 0, int calls = 0)
     {
         if (!IsRecording || !double.IsFinite(milliseconds) || milliseconds <= 0) return false;
+        states[Count] = state;
+        simulationMs[Count] = simulationMilliseconds;
+        simulationCalls[Count] = calls;
         intervals[Count++] = milliseconds;
         ElapsedMs += milliseconds;
         if (Count < Capacity && ElapsedMs < DurationLimitMs) return false;
-        Stop();
+        Stop(Count == Capacity ? "sample_limit" : "duration_limit");
         return true; // Caller saves after the bounded recording finishes.
     }
 
-    public void Stop()
+    public void Stop(string reason = "manual_stop")
     {
         if (!IsRecording) return;
+        Mark(reason);
         IsRecording = false;
         HasPendingSave = true;
     }
@@ -55,15 +78,18 @@ internal sealed class BenchmarkRecorder
         using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.Read))
         using (var writer = new StreamWriter(stream))
         {
-            writer.WriteLine("sample,elapsed_ms,frame_interval_ms");
+            writer.WriteLine("record_type,sample,elapsed_ms,frame_interval_ms,state,event,simulation_ms,simulation_calls,profiling_enabled");
             double elapsed = 0;
             for (int i = 0; i < Count; i++)
             {
                 elapsed += intervals[i];
                 // Invariant formatting keeps decimal points valid in CSV on
                 // computers whose regional settings normally use commas.
-                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1:R},{2:R}", i + 1, elapsed, intervals[i]));
+                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "frame,{0},{1:R},{2:R},{3},,{4:R},{5},{6}", i + 1, elapsed, intervals[i], states[i], simulationMs[i], simulationCalls[i], ProfileEnabled ? 1 : 0));
             }
+            // Event rows follow frame rows; sort by elapsed_ms for a timeline.
+            for (int i = 0; i < eventCount; i++)
+                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "event,,{0:R},,,{1},,,{2}", eventTimes[i], events[i], ProfileEnabled ? 1 : 0));
         }
         // Includes successful flush/close. A failed write keeps the buffer so
         // Stop and Save can retry. Any partial file is not a completed benchmark.

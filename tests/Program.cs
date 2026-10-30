@@ -41,7 +41,10 @@ try
         first = recorder.Save(folder);
     }
     finally { System.Globalization.CultureInfo.CurrentCulture = culture; }
-    Check(File.ReadAllLines(first).SequenceEqual(new[] { "sample,elapsed_ms,frame_interval_ms", "1,10.5,10.5", "2,30.75,20.25" }), "Exact invariant CSV");
+    var lines = File.ReadAllLines(first);
+    Check(lines[0] == "record_type,sample,elapsed_ms,frame_interval_ms,state,event,simulation_ms,simulation_calls,profiling_enabled", "CSV schema");
+    Check(lines[1] == "frame,1,10.5,10.5,unknown,,0,0,0" && lines[2] == "frame,2,30.75,20.25,unknown,,0,0,0", "Exact invariant frame rows");
+    Check(lines.Any(line => line.Contains(",recording_start,")) && lines.Any(line => line.Contains(",manual_stop,")), "Start and stop events saved");
     using (File.Open(first, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
     Check(!recorder.HasPendingSave && recorder.Start(), "Save closes file and allows next run");
     Check(recorder.Add(BenchmarkRecorder.DurationLimitMs), "Auto-stop at duration cap");
@@ -51,6 +54,17 @@ try
     for (int i = 0; i < BenchmarkRecorder.Capacity; i++) recorder.Add(0.01);
     Check(!recorder.IsRecording && recorder.Count == BenchmarkRecorder.Capacity, "Bounded sample buffer");
     Check(!recorder.Add(10), "Stopped recorder cannot overflow");
+    recorder.Save(folder);
+    recorder.ProfileEnabled = true;
+    recorder.Start();
+    recorder.Mark("round_start");
+    recorder.Add(20, "active_round", 12.5, 3);
+    recorder.Mark("round_end");
+    recorder.Stop("round_end_stop");
+    string marked = recorder.Save(folder);
+    var markedLines = File.ReadAllLines(marked);
+    Check(markedLines.Contains("frame,1,20,20,active_round,,12.5,3,1"), "State and profiling fields");
+    Check(markedLines.Any(line => line.Contains(",round_end_stop,")), "Explicit stop reason");
 }
 finally { Directory.Delete(folder, recursive: true); }
 Console.WriteLine("All benchmark checks passed.");

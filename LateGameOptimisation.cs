@@ -20,6 +20,12 @@ public class LateGameOptimisation : BloonsTD6Mod
     // A separate new setting means old saved logging preferences cannot hide
     // the display on the first launch of this version. Logging stays opt-in.
     public static readonly ModSettingBool ShowDiagnosticsOverlay = new(true);
+    public static readonly ModSettingBool EnableSimulationProfiling = new(false) { requiresRestart = true };
+    private string gameState = "unknown";
+    private bool stateChanged;
+    private string stateBeforePause = "unknown";
+    private bool saveRequested;
+    private bool focused = true;
     public static readonly ModSettingHotkey BenchmarkHotkey = new(KeyCode.F8);
     public static readonly ModSettingButton StartBenchmark = new(() => instance?.StartRecording());
     public static readonly ModSettingButton StopAndSaveBenchmark = new(() => instance?.StopAndSave());
@@ -37,11 +43,25 @@ public class LateGameOptimisation : BloonsTD6Mod
     public override void OnApplicationStart()
     {
         instance = this;
+        if (EnableSimulationProfiling)
+        {
+            try { SimulationProfiler.Install(); }
+            catch (Exception error) { ModHelper.Msg<LateGameOptimisation>($"Simulation profiling unavailable: {error.Message}"); }
+        }
         ModHelper.Msg<LateGameOptimisation>("Diagnostics prototype loaded. No gameplay optimisations enabled.");
     }
 
     public override void OnUpdate()
     {
+        if (Application.isFocused != focused)
+        {
+            focused = Application.isFocused;
+            recorder.Mark(focused ? "focus_gained" : "focus_lost");
+            stateChanged = true;
+        }
+        // Lifecycle hooks only request a save. Disk I/O happens here, after
+        // returning from the original game's round-end or match-end callback.
+        if (saveRequested) { saveRequested = false; StopAndSave(); }
         if (BenchmarkHotkey.JustPressed())
         {
             if (recorder.IsRecording || recorder.HasPendingSave) StopAndSave();
@@ -52,8 +72,11 @@ public class LateGameOptimisation : BloonsTD6Mod
         if (recorder.IsRecording)
         {
             long timestamp = Stopwatch.GetTimestamp();
-            if (recordingTimestamp != 0 && recorder.Add((timestamp - recordingTimestamp) * 1000.0 / Stopwatch.Frequency))
+            var profile = SimulationProfiler.Drain();
+            if (recordingTimestamp != 0 && recorder.Add((timestamp - recordingTimestamp) * 1000.0 / Stopwatch.Frequency,
+                    stateChanged ? "transition" : (!focused ? "unfocused" : gameState), profile.Milliseconds, profile.Calls))
                 StopAndSave();
+            stateChanged = false;
             recordingTimestamp = timestamp;
         }
         // Main-thread callback intervals, NOT CPU timings of game methods.
@@ -79,7 +102,7 @@ public class LateGameOptimisation : BloonsTD6Mod
                     $"{window.FramesPerSecond:F1} FPS (update callbacks)\n" +
                     $"Frame mean: {window.Mean:F2} ms   Max: {window.Maximum:F2} ms\n" +
                     $"Window: {window.Total / 1000:F1} / 10 s   Samples: {window.Count}\n" +
-                    "Includes menus / pauses / loading\n" +
+                    $"State: {gameState} | Profile: {(SimulationProfiler.Installed ? "on" : "off")}\n" +
                     "Developed with OpenAI Codex (AI)";
                 nextDisplayTimestamp = now + Stopwatch.Frequency / 2;
             }
@@ -99,13 +122,18 @@ public class LateGameOptimisation : BloonsTD6Mod
     private void StartRecording()
     {
         if (!recorder.Start()) return;
-        recordingTimestamp = 0;
-        recordingStatus = "RECORDING - F8: Stop and save";
+        recorder.ProfileEnabled = SimulationProfiler.Installed;
+        recorder.Mark("initial_state_" + gameState);
+        SimulationProfiler.Drain();
+        SimulationProfiler.Recording = true;
+        recordingTimestamp = Stopwatch.GetTimestamp();
+        recordingStatus = SimulationProfiler.Installed ? "RECORDING + simulation profiling" : "RECORDING - F8: Stop and save";
     }
 
     private void StopAndSave()
     {
         recorder.Stop();
+        SimulationProfiler.Recording = false;
         if (!recorder.HasPendingSave) return;
         try
         {
@@ -121,6 +149,37 @@ public class LateGameOptimisation : BloonsTD6Mod
             ModHelper.Msg<LateGameOptimisation>($"Benchmark save failed; buffer retained: {exception.Message}");
         }
     }
+
+    private void State(string state, string marker, bool stop = false)
+    {
+        gameState = state;
+        stateChanged = true;
+        recorder.Mark(marker);
+        if (stop && recorder.IsRecording)
+        {
+            // Retain the last partial interval with an explicit boundary label.
+            long now = Stopwatch.GetTimestamp();
+            var profile = SimulationProfiler.Drain();
+            if (recordingTimestamp != 0) recorder.Add((now - recordingTimestamp) * 1000.0 / Stopwatch.Frequency,
+                "transition", profile.Milliseconds, profile.Calls);
+            recorder.Stop(marker + "_stop");
+            SimulationProfiler.Recording = false;
+            saveRequested = true;
+        }
+    }
+
+    public override void OnRoundStart() => State("active_round", "round_start");
+    public override void OnRoundEnd() => State("between_rounds", "round_end", true);
+    public override void OnMatchStart() => State("unknown", "match_start");
+    public override void OnMatchEnd() => State("outside_match", "match_end", true);
+    public override void OnRestart() => State("unknown", "restart", true);
+    public override void OnPauseScreenOpened(Il2CppAssets.Scripts.Unity.UI_New.Pause.PauseScreen screen)
+    {
+        stateBeforePause = gameState;
+        State("pause_menu", "pause_menu_open");
+    }
+    public override void OnPauseScreenClosed(Il2CppAssets.Scripts.Unity.UI_New.Pause.PauseScreen screen)
+        => State(stateBeforePause, "pause_menu_closed");
 
     public override void OnGUI()
     {
