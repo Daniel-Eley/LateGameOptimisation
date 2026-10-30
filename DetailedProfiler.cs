@@ -6,17 +6,27 @@ using Il2CppAssets.Scripts.Simulation;
 
 namespace LateGameOptimisation;
 
-// Four explicitly selected entry points, never a patch on every behavior.
+// Eight explicitly selected entry points, never a patch on every behavior.
 // Inclusive timings can overlap across categories; do NOT sum them.
 internal static class DetailedProfiler
 {
     private const string Owner = "Daniel-Eley.LateGameOptimisation.DetailedProfiling";
-    private static readonly long[] ticks = new long[4];
-    private static readonly int[] calls = new int[4];
-    private static readonly int[] depth = new int[4];
+    public const int ProbeCount = 8;
+    private static readonly long[] ticks = new long[ProbeCount];
+    private static readonly int[] calls = new int[ProbeCount];
+    private static readonly int[] depth = new int[ProbeCount];
     private static int mainThread;
     public static int InstalledMask { get; private set; }
     public static string Status { get; private set; } = "disabled";
+    public static int InstalledCount
+    {
+        get
+        {
+            int count = 0;
+            for (int i = 0; i < ProbeCount; i++) if ((InstalledMask & (1 << i)) != 0) count++;
+            return count;
+        }
+    }
 
     public static void Install()
     {
@@ -26,9 +36,13 @@ internal static class DetailedProfiler
             "Il2CppAssets.Scripts.Simulation.Physics.CollisionChecker",
             "Il2CppAssets.Scripts.Simulation.Towers.Behaviors.Attack.Attack",
             "Il2CppAssets.Scripts.Simulation.Towers.Weapons.Weapon",
-            "Il2CppAssets.Scripts.Simulation.Bloons.Bloon"
+            "Il2CppAssets.Scripts.Simulation.Bloons.Bloon",
+            "Il2CppAssets.Scripts.Simulation.Towers.Projectiles.Behaviors.TravelStrait",
+            "Il2CppAssets.Scripts.Simulation.Towers.Projectiles.Behaviors.TrackTarget",
+            "Il2CppAssets.Scripts.Simulation.Towers.Projectiles.Behaviors.Age",
+            "Il2CppAssets.Scripts.Simulation.Simulation"
         };
-        string[] methods = { "Process", "FindTarget", "Process", "Process" };
+        string[] methods = { "Process", "FindTarget", "Process", "Process", "Process", "Process", "Process", "FlushProcessList" };
         for (int i = 0; i < types.Length; i++)
         {
             MethodInfo? target = null;
@@ -80,12 +94,22 @@ internal static class DetailedProfiler
     private static void After2(long __state) => End(2, __state);
     private static void Before3(out long __state) => __state = Begin(3);
     private static void After3(long __state) => End(3, __state);
+    private static void Before4(out long __state) => __state = Begin(4);
+    private static void After4(long __state) => End(4, __state);
+    private static void Before5(out long __state) => __state = Begin(5);
+    private static void After5(long __state) => End(5, __state);
+    private static void Before6(out long __state) => __state = Begin(6);
+    private static void After6(long __state) => End(6, __state);
+    private static void Before7(out long __state) => __state = Begin(7);
+    private static void After7(long __state) => End(7, __state);
 
     public static DetailTimings Drain()
     {
         double scale = 1000.0 / Stopwatch.Frequency;
         var result = new DetailTimings(ticks[0] * scale, calls[0], ticks[1] * scale, calls[1],
-            ticks[2] * scale, calls[2], ticks[3] * scale, calls[3]);
+            ticks[2] * scale, calls[2], ticks[3] * scale, calls[3],
+            ticks[4] * scale, calls[4], ticks[5] * scale, calls[5],
+            ticks[6] * scale, calls[6], ticks[7] * scale, calls[7]);
         Array.Clear(ticks, 0, ticks.Length);
         Array.Clear(calls, 0, calls.Length);
         return result;

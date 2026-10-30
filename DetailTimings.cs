@@ -5,4 +5,8 @@ internal readonly record struct DetailTimings(
     double CollisionMs, int CollisionCalls,
     double TargetMs, int TargetCalls,
     double WeaponMs, int WeaponCalls,
-    double BloonMs, int BloonCalls);
+    double BloonMs, int BloonCalls,
+    double TravelMs = 0, int TravelCalls = 0,
+    double TrackingMs = 0, int TrackingCalls = 0,
+    double AgeMs = 0, int AgeCalls = 0,
+    double MaintenanceMs = 0, int MaintenanceCalls = 0);

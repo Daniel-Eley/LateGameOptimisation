@@ -32,3 +32,7 @@ The 0.5.0 four-entry-point profiler, detailed CSV fields, tests and documentatio
 were generated with Codex after inspecting the installed game's assembly metadata.
 No proprietary game assemblies are included in the repository. Native hook
 coverage and overhead remain subject to in-game validation.
+
+The 0.6.0 expanded profiling hooks, probe-count display, appended CSV fields and
+associated checks/documentation were generated with Codex. Local build and CSV
+tests passed; interception of the four new native methods awaits in-game validation.

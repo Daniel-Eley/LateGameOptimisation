@@ -32,3 +32,9 @@ It installs four observational native-method hooks in addition to the broad time
 The exact methods and coverage limits are listed in README.md. It introduces no
 network access, additional output directories or gameplay mutations. Harmony hooks
 still carry compatibility and instrumentation risks; build success is not an audit.
+
+Version 0.6.0 expands the opt-in detailed profiler to eight selected entry points,
+adding TravelStrait.Process, TrackTarget.Process, Age.Process and
+Simulation.FlushProcessList. The same restart requirement and observation-only
+prefix/finalizer behavior apply. No new network access or file destinations are
+introduced. More hooks can add overhead and version-specific compatibility risk.

@@ -108,7 +108,7 @@ public class LateGameOptimisation : BloonsTD6Mod
                     $"{window.FramesPerSecond:F1} FPS (update callbacks)\n" +
                     $"Frame mean: {window.Mean:F2} ms   Max: {window.Maximum:F2} ms\n" +
                     $"Window: {window.Total / 1000:F1} / 10 s   Samples: {window.Count}\n" +
-                    $"State: {gameState} | Profile: {(SimulationProfiler.Installed ? "on" : "off")} | Detail: {DetailedProfiler.InstalledMask}/15\n" +
+                    $"State: {gameState} | Profile: {(SimulationProfiler.Installed ? "on" : "off")} | Detail: {DetailedProfiler.InstalledCount}/{DetailedProfiler.ProbeCount}\n" +
                     "Developed with OpenAI Codex (AI)";
                 nextDisplayTimestamp = now + Stopwatch.Frequency / 2;
             }

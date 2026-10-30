@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0 - Unreleased
+
+- Expand opt-in detailed profiling with projectile travel, tracking, lifetime and process-list entry points.
+- Append four timing/count pairs and show an actual installed-probe count (8/8).
+- Document new-setup baseline procedure and preserve old CSV meanings.
+- Build and CSV tests pass; added native probes need in-game validation.
+
 ## 0.5.0 - Unreleased
 
 - Add opt-in detailed timing for collision, attack targeting, weapon and bloon entry points.

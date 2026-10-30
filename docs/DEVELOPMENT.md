@@ -144,3 +144,20 @@ value type stored in a fixed-capacity buffer. Four timers do not mean low overhe
 these methods can run many times per simulation tick. Native interception and
 measurement distortion must be evaluated using a single test before further runs.
 The probes do not identify projectile movement or all specialized targeting paths.
+
+## Extended probes (0.6.0)
+
+Inspection of local Assembly-CSharp metadata confirmed declared Process methods
+on TravelStrait, TrackTarget and Age, and FlushProcessList on Simulation. Four
+additional constant-index prefix/finalizer pairs observe those entry points using
+the existing nesting, recording and main-thread guards. Fixed arrays now contain
+eight counters. DetailTimings stores all eight pairs by value; the CSV appends
+columns rather than changing old field meanings. Event rows and frame rows have
+26 columns. Tests verify exact populated fields, zero defaults, row alignment,
+invariant formatting and clearing between recordings. Array capacity remains
+120,000 frames, although the added fields increase its fixed memory footprint.
+
+The overlay uses a population count while detailed_mask retains bit semantics.
+Broad-only profiling remains available for overhead comparisons. No claim is made
+that these candidate methods exhaust unmeasured simulation work. Unknown native
+coverage, inclusive overlap and high-frequency interception overhead remain limits.

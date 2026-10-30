@@ -1,6 +1,6 @@
 # LateGameOptimisation
 
-An experimental BTD6 mod investigating late-game performance. **Version 0.5.0 is a diagnostics foundation, not a performance improvement or a multicore simulation mod.** It does not change targeting, damage, projectiles or game speed. In-game compatibility has not yet been tested.
+An experimental BTD6 mod investigating late-game performance. **Version 0.6.0 is a diagnostics foundation, not a performance improvement or a multicore simulation mod.** It does not change targeting, damage, projectiles or game speed. In-game compatibility has not yet been tested.
 
 **AI development disclosure:** This project is developed with OpenAI Codex. AI generated the initial custom diagnostic code, tests, documentation and workflow changes from the Mod Helper template, under Daniel Eley's direction. This is substantial AI involvement, not just autocomplete. See [AI_DISCLOSURE.md](AI_DISCLOSURE.md) for scope and validation limits.
 
@@ -181,3 +181,44 @@ No original method is skipped and no arguments, return values, game state or
 exceptions are changed. The new native hooks have not yet been verified in-game.
 Build and CSV checks passed, including detailed values, schema alignment and buffer
 reuse. Your existing CSV files are unchanged.
+
+## Expanded coverage and revised benchmarks (0.6.0)
+
+Detailed profiling now includes eight selected methods. With Enable Detailed
+Profiling on and after restarting, the overlay displays **Detail: 8/8** when all
+hooks installed. This is an actual count, replacing the old bitmask-style display.
+The CSV still records a bitmask: all eight installed = 255, original four = 15.
+Zero observed calls can still mean a method is unused or not intercepted.
+
+Additional timing/count pairs:
+
+| Columns | Exact method | Bit |
+| --- | --- | --- |
+| travel_ms / travel_calls | TravelStrait.Process | 16 |
+| tracking_ms / tracking_calls | TrackTarget.Process | 32 |
+| age_ms / age_calls | Age.Process | 64 |
+| maintenance_ms / maintenance_calls | Simulation.FlushProcessList | 128 |
+
+These are candidate paths for projectile travel, homing, lifetime and process-list
+maintenance. They do not cover every movement style or tower behavior. Their
+names alone do not prove how much work they perform. Measurements remain inclusive,
+may overlap, and apply only inside main-thread Simulation.Simulate calls. Do not
+sum categories. High-frequency hooks can materially distort measured cost.
+
+When changing towers, upgrades, round or other workload settings, treat the result
+as a NEW benchmark. Keep the older save/results separately. Finish setup changes,
+then preserve that starting save and document map, round, tower/upgrade changes,
+3x speed and other mod settings. Do not compare changed setups as an optimisation
+before/after result. The prior heavy test was a regular Spa Pits round-234 saved
+game with ninja spam, not sandbox.
+
+For the new setup, first collect three broad-only runs (Simulation Profiling on,
+Detailed Profiling off; restart after changing these switches). Then enable
+Detailed Profiling, restart, confirm 8/8 and collect ONE diagnostic run. Start
+recording with your configured benchmark hotkey before starting the round and
+wait for the round-end save. Preserve the exact same starting conditions across
+runs. Report any partial hook count before collecting further detailed runs.
+
+Version 0.6.0 builds with zero warnings/errors and passes recorder/schema tests.
+The four new native probes have not yet been validated in-game. No gameplay
+optimisation is introduced by this release.
