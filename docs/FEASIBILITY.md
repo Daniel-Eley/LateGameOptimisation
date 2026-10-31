@@ -1,5 +1,9 @@
 # Collision and homing optimisation feasibility
 
+Follow-up: [native collision investigation](NATIVE-COLLISION.md) now traces the
+iterator/callback boundary using the retained local native address map. This
+document records the earlier interface-only assessment and its limitations.
+
 Assessment date: 31 October 2026. Prepared with OpenAI Codex. This is a local
 interface/interop feasibility investigation, not recovered native source or a
 proof of gameplay equivalence. No gameplay code or installed DLL was changed.

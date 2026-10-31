@@ -42,3 +42,9 @@ produced with Codex using local metadata/wrapper IL and prior benchmark results.
 The native algorithms were not reconstructed; the report explicitly separates
 observed interfaces, inferences and unresolved requirements. No gameplay patch
 was implemented as part of this assessment.
+
+The native collision follow-up and hash-checked read-only inspection tool were
+produced with Codex using locally retained Cpp2IL address metadata and Iced x64
+instruction decoding. The report summarizes manually interpreted control flow;
+it is not a complete decompilation or correctness proof. No raw game disassembly,
+proprietary binaries or gameplay replacement were published.

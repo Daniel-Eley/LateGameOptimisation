@@ -231,3 +231,9 @@ gates. Direct parallel calls to existing simulation methods are not approved.
 A copied-data homing geometry experiment is conditional on establishing its native
 formula and dependencies; no safe replacement or performance gain is established.
 The local read-only inspection can be reproduced with scripts/Inspect-Feasibility.ps1.
+
+The [native collision follow-up](docs/NATIVE-COLLISION.md) traces candidate
+iteration and collision callbacks using the loader's retained local address map.
+It identifies MoveNext versus CollideBloon as the next measurement boundary;
+no gameplay replacement or new runtime probe is installed by that investigation.
+Raw disassembly remains in the ignored local analysis directory.
