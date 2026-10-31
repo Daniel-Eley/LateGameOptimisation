@@ -36,3 +36,9 @@ coverage and overhead remain subject to in-game validation.
 The 0.6.0 expanded profiling hooks, probe-count display, appended CSV fields and
 associated checks/documentation were generated with Codex. Local build and CSV
 tests passed; interception of the four new native methods awaits in-game validation.
+
+The 31 October 2026 feasibility assessment and read-only inspection script were
+produced with Codex using local metadata/wrapper IL and prior benchmark results.
+The native algorithms were not reconstructed; the report explicitly separates
+observed interfaces, inferences and unresolved requirements. No gameplay patch
+was implemented as part of this assessment.

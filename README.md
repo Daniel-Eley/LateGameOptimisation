@@ -222,3 +222,12 @@ runs. Report any partial hook count before collecting further detailed runs.
 Version 0.6.0 builds with zero warnings/errors and passes recorder/schema tests.
 The four new native probes have not yet been validated in-game. No gameplay
 optimisation is introduced by this release.
+
+## Optimisation feasibility assessment
+
+Read [the collision and homing feasibility assessment](docs/FEASIBILITY.md) for
+inspected interfaces, binary identity, confirmed findings, unknowns and acceptance
+gates. Direct parallel calls to existing simulation methods are not approved.
+A copied-data homing geometry experiment is conditional on establishing its native
+formula and dependencies; no safe replacement or performance gain is established.
+The local read-only inspection can be reproduced with scripts/Inspect-Feasibility.ps1.
