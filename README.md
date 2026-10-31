@@ -1,5 +1,9 @@
 # LateGameOptimisation
 
+The [native sampling investigation](docs/NATIVE-SAMPLING.md) records the measured
+collision-probe overhead and prepares a smaller Windows CPU sampling profile.
+No native trace has yet been collected and no performance optimisation is enabled.
+
 **Startup investigation:** 0.7.1 adds staged startup diagnostics after the owner
 reported a hang with 0.7.0. Rollback to 0.6.0 restored launch. Keep collision profiling
 off for the initial 0.7.1 launch; see [the investigation procedure](docs/COLLISION-BENCHMARK.md).

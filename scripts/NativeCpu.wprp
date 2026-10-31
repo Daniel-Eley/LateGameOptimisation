@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AI-assisted diagnostic profile. System-wide CPU sampling only; no hot-method
+     patches, network providers, heap capture, or file-content collection.
+     Process/module metadata can still contain private paths. Keep ETL local. -->
+<WindowsPerformanceRecorder Version="1.0" Author="LateGameOptimisation">
+  <Profiles>
+    <SystemCollector Id="LgoCollector" Name="LGO native CPU samples">
+      <BufferSize Value="1024" />
+      <Buffers Value="128" />
+    </SystemCollector>
+    <SystemProvider Id="LgoProvider">
+      <Keywords>
+        <Keyword Value="ProcessThread" />
+        <Keyword Value="Loader" />
+        <Keyword Value="SampledProfile" />
+      </Keywords>
+      <Stacks>
+        <Stack Value="SampledProfile" />
+      </Stacks>
+    </SystemProvider>
+    <Profile Id="LgoCpu.Verbose.Memory" Name="LgoCpu"
+             Description="Short native CPU sampling pilot" DetailLevel="Verbose" LoggingMode="Memory">
+      <Collectors>
+        <SystemCollectorId Value="LgoCollector">
+          <SystemProviderId Value="LgoProvider" />
+        </SystemCollectorId>
+      </Collectors>
+    </Profile>
+  </Profiles>
+</WindowsPerformanceRecorder>

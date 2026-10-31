@@ -59,3 +59,7 @@ and gameplay equivalence are not certified by those checks.
 The 0.7.1 startup logging, staged hook installation and troubleshooting procedure
 were generated with Codex after a reported startup hang and successful rollback.
 The cause has not been isolated. This diagnostic build is not a verified fix.
+
+The native sampling investigation and minimal WPR profile were generated with
+Codex. The installed WPR accepted the profile definition; actual trace capture,
+stack quality and native address attribution have not yet been validated.
