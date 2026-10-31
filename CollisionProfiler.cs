@@ -20,10 +20,18 @@ internal static class CollisionProfiler
     public static bool Installed { get; private set; }
     public static string Status { get; private set; } = "off";
 
-    public static void Install()
+    // Stages are cumulative: 0 = no setup, 1 = parent, 2 = parent + loop,
+    // 3 = all probes. Partial stages are startup tests, never benchmark data.
+    public static void Install(int stage)
     {
+        if (stage < 1 || stage > 3)
+        {
+            Status = "startup test 0/3";
+            Log("No collision hooks requested; skipping hash checks and resolution.");
+            return;
+        }
         var harmony = new HarmonyLib.Harmony(Owner);
-        MethodInfo[] targets = Array.Empty<MethodInfo>();
+        var targets = new System.Collections.Generic.List<MethodInfo>(stage);
         try
         {
             // The interpretation depends on the inspected native implementation.
@@ -31,24 +39,30 @@ internal static class CollisionProfiler
             // occurs only once at startup when this experiment is requested.
             using var process = Process.GetCurrentProcess();
             string root = Path.GetDirectoryName(process.MainModule!.FileName)!;
+            Log("Checking native binary hash...");
             VerifyHash(Path.Combine(root, "GameAssembly.dll"),
                 "CAF18ADDE5B26658F65A8D040413624886FF90BB15C789A29DED4736F6E6689C");
+            Log("Native hash passed; checking wrapper hash...");
             VerifyHash(typeof(Projectile).Assembly.Location,
                 "B420556C3BD1EEE3CDBDBD1B5CA0F53FE0E327619614D60E3ADDE9838FDA825B");
 
-            // Exact overloads: the IEnumerable overload has a different path.
-            targets = new[] {
-                Required(typeof(CollisionChecker), "Process", typeof(int)),
-                Required(typeof(Projectile), "CollideBloons", typeof(CollisionGrid<Bloon>.CollisionState)),
-                Required(typeof(Projectile), "CollideBloon", typeof(Bloon), typeof(bool))
-            };
+            Log("Wrapper hash passed.");
             mainThread = Environment.CurrentManagedThreadId;
-            for (int i = 0; i < targets.Length; i++)
-                harmony.Patch(targets[i],
+            for (int i = 0; i < stage; i++)
+            {
+                // Resolve only the requested stage, not every target upfront.
+                Log($"Resolving collision hook {i + 1}/3...");
+                MethodInfo target = Resolve(i);
+                targets.Add(target);
+                Log($"Installing collision hook {i + 1}/3: {target.Name}...");
+                harmony.Patch(target,
                     prefix: new HarmonyMethod(typeof(CollisionProfiler), "Before" + i),
                     finalizer: new HarmonyMethod(typeof(CollisionProfiler), "After" + i));
-            Installed = true;
-            Status = "3/3";
+                Log($"Collision hook {i + 1}/3 installed.");
+            }
+            Installed = stage == 3;
+            Status = Installed ? "3/3" : $"startup test {stage}/3";
+            Log($"Setup complete: {Status}. Measurement enabled: {Installed}.");
         }
         catch (Exception error)
         {
@@ -65,6 +79,24 @@ internal static class CollisionProfiler
             BTD_Mod_Helper.ModHelper.Msg<LateGameOptimisation>($"Collision profiling disabled: {error.Message}");
         }
     }
+
+    private static void Log(string message)
+        => MelonLoader.MelonLogger.Msg("[LGO startup] " + message);
+
+    // Keep target resolution outside Install's JIT compilation and split the
+    // generic-argument overload out so stage 1 need not resolve that type.
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static MethodInfo Resolve(int index) => index switch
+    {
+        0 => Required(typeof(CollisionChecker), "Process", typeof(int)),
+        1 => ResolveLoop(),
+        2 => Required(typeof(Projectile), "CollideBloon", typeof(Bloon), typeof(bool)),
+        _ => throw new ArgumentOutOfRangeException(nameof(index))
+    };
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static MethodInfo ResolveLoop()
+        => Required(typeof(Projectile), "CollideBloons", typeof(CollisionGrid<Bloon>.CollisionState));
 
     private static MethodInfo Required(Type type, string name, params Type[] parameters)
         => type.GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly,

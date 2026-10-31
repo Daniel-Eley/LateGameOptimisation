@@ -55,3 +55,7 @@ non-generic enclosing methods because bloon-only interception of shared generic
 MoveNext has not been established. Residual time is explicitly not a direct
 search measurement. Local build and tests passed; native interception, overhead
 and gameplay equivalence are not certified by those checks.
+
+The 0.7.1 startup logging, staged hook installation and troubleshooting procedure
+were generated with Codex after a reported startup hang and successful rollback.
+The cause has not been isolated. This diagnostic build is not a verified fix.

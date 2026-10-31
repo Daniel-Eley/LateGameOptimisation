@@ -1,5 +1,11 @@
 # LateGameOptimisation
 
+**Startup investigation:** 0.7.1 adds staged startup diagnostics after the owner
+reported a hang with 0.7.0. Rollback to 0.6.0 restored launch. Keep collision profiling
+off for the initial 0.7.1 launch; see [the investigation procedure](docs/COLLISION-BENCHMARK.md).
+Collision Startup Stage defaults to 0 even when the enable switch is on. This is
+not a confirmed fix and collision benchmarks are paused pending startup validation.
+
 An experimental BTD6 mod investigating late-game performance. **Version 0.7.0 is a diagnostics foundation, not a performance improvement or a multicore simulation mod.** It does not intentionally change targeting, damage, projectiles or game speed. The new collision probes still require in-game validation.
 
 **AI development disclosure:** This project is developed with OpenAI Codex. AI generated the initial custom diagnostic code, tests, documentation and workflow changes from the Mod Helper template, under Daniel Eley's direction. This is substantial AI involvement, not just autocomplete. See [AI_DISCLOSURE.md](AI_DISCLOSURE.md) for scope and validation limits.

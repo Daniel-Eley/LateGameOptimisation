@@ -1,5 +1,31 @@
 # Collision breakdown benchmark: 0.7.0
 
+## Startup investigation supersedes the benchmark procedure (0.7.1)
+
+The owner reported a startup hang with 0.7.0. Windows Code Integrity also blocked
+generated Unity assemblies; rolling back the DLL/settings to 0.6.0 restored launch.
+That does not isolate the cause. Do not collect collision benchmarks yet.
+
+First launch 0.7.1 with Enable Collision Profiling **off**, Collision Startup Stage
+**0**, Detailed Profiling off and the previously working Simulation Profiling on.
+Check that the main menu appears. Preserve the loader log before another restart.
+Search it for `[LGO startup]`: entry, simulation installation, collision skipped,
+and completion. Absence of the entry marker means we have not established that
+OnApplicationStart began; absence of completion is not proof of a particular hook.
+
+Only after reviewing each successful launch, enable collision profiling and test
+stage 0 (no collision setup), then 1 (parent), 2 (parent plus loop), and finally 3
+(all three), restarting between changes. Never advance automatically after a hang.
+Hash checks and each target's resolution/installation have before/after markers.
+Stages 1 and 2 display `startup test 1/3` or `startup test 2/3`; collision CSV
+measurement is disabled in these stages to prevent misleading incomplete results.
+Only stage 3 can show plain `3/3` and enable collision recording.
+
+No security protections are disabled, no blocked files are replaced, and no game
+save is modified by this procedure. A successful menu launch still does not prove
+native hook coverage or gameplay compatibility. The original benchmark procedure
+below resumes only after startup and coverage checks pass.
+
 This is an observational profiling experiment, not a speed improvement. It is
 intended to choose the next investigation target without changing gameplay.
 

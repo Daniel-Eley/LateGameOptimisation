@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.1 - Unreleased startup investigation
+
+- Add explicit startup-stage logging before/after profiler installation and binary checks.
+- Default Collision Startup Stage to 0. Stages 1/2/3 install cumulative parent/loop/hit hooks.
+- Disable collision measurement in partial stages; resolve only requested targets.
+- Investigate the reported 0.7.0 startup hang; rollback to 0.6.0 restored launch.
+- Windows also reported blocked generated Unity DLLs. Cause remains unresolved; this is not a confirmed fix.
+
 ## 0.7.0 - Unreleased
 
 - Add separate opt-in, restart-required collision breakdown profiling, guarded by reviewed binary hashes.

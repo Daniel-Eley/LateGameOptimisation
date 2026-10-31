@@ -23,6 +23,9 @@ public class LateGameOptimisation : BloonsTD6Mod
     public static readonly ModSettingBool EnableSimulationProfiling = new(false) { requiresRestart = true };
     public static readonly ModSettingBool EnableDetailedProfiling = new(false) { requiresRestart = true };
     public static readonly ModSettingBool EnableCollisionProfiling = new(false) { requiresRestart = true };
+    // Explicit opt-in per startup stage. Even an old saved "enabled" switch
+    // cannot immediately install all three hooks after upgrading this build.
+    public static readonly ModSettingInt CollisionStartupStage = new(0) { requiresRestart = true };
     private string gameState = "unknown";
     private bool stateChanged;
     private string stateBeforePause = "unknown";
@@ -44,20 +47,39 @@ public class LateGameOptimisation : BloonsTD6Mod
 
     public override void OnApplicationStart()
     {
+        MelonLogger.Msg($"[LGO startup] Entered OnApplicationStart, version {ModHelperData.Version}.");
         instance = this;
+        MelonLogger.Msg($"[LGO startup] Options: simulation={EnableSimulationProfiling}, detail={EnableDetailedProfiling}, collision={EnableCollisionProfiling}, stage={CollisionStartupStage}.");
         if (EnableSimulationProfiling || EnableDetailedProfiling || EnableCollisionProfiling)
         {
-            try { SimulationProfiler.Install(); }
+            try
+            {
+                MelonLogger.Msg("[LGO startup] Installing simulation hook...");
+                SimulationProfiler.Install();
+                MelonLogger.Msg("[LGO startup] Simulation hook installed.");
+            }
             catch (Exception error) { ModHelper.Msg<LateGameOptimisation>($"Simulation profiling unavailable: {error.Message}"); }
         }
         // Keep the two high-overhead experiments separate. Collision mode takes
         // priority if both saved switches are on; the CSV records actual hooks.
         if (EnableDetailedProfiling && !EnableCollisionProfiling && SimulationProfiler.Installed)
         {
-            try { DetailedProfiler.Install(); }
+            try
+            {
+                MelonLogger.Msg("[LGO startup] Installing detailed hooks...");
+                DetailedProfiler.Install();
+                MelonLogger.Msg("[LGO startup] Detailed hook setup returned.");
+            }
             catch (Exception error) { ModHelper.Msg<LateGameOptimisation>($"Detailed profiling setup error: {error.Message}"); }
         }
-        if (EnableCollisionProfiling && SimulationProfiler.Installed) CollisionProfiler.Install();
+        if (EnableCollisionProfiling && SimulationProfiler.Installed)
+        {
+            MelonLogger.Msg("[LGO startup] Entering collision setup...");
+            CollisionProfiler.Install(CollisionStartupStage);
+            MelonLogger.Msg("[LGO startup] Collision setup returned.");
+        }
+        else MelonLogger.Msg("[LGO startup] Collision setup skipped.");
+        MelonLogger.Msg("[LGO startup] OnApplicationStart complete.");
         ModHelper.Msg<LateGameOptimisation>("Diagnostics prototype loaded. No gameplay optimisations enabled.");
     }
 
