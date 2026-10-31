@@ -1,6 +1,6 @@
 # LateGameOptimisation
 
-An experimental BTD6 mod investigating late-game performance. **Version 0.6.0 is a diagnostics foundation, not a performance improvement or a multicore simulation mod.** It does not change targeting, damage, projectiles or game speed. In-game compatibility has not yet been tested.
+An experimental BTD6 mod investigating late-game performance. **Version 0.7.0 is a diagnostics foundation, not a performance improvement or a multicore simulation mod.** It does not intentionally change targeting, damage, projectiles or game speed. The new collision probes still require in-game validation.
 
 **AI development disclosure:** This project is developed with OpenAI Codex. AI generated the initial custom diagnostic code, tests, documentation and workflow changes from the Mod Helper template, under Daniel Eley's direction. This is substantial AI involvement, not just autocomplete. See [AI_DISCLOSURE.md](AI_DISCLOSURE.md) for scope and validation limits.
 
@@ -10,7 +10,7 @@ Performance is the only permitted gameplay-facing change. Optimisations must pre
 
 Smoother rendering and less real-world waiting from reduced lag are intended. Changing simulation speed, skipping updates, approximating results or changing the order of gameplay events is prohibited. If a proposed optimisation cannot meet this requirement, it must remain disabled and the original game calculation must run. Multicore execution is a possible technique, never a reason to compromise correctness.
 
-This is a project requirement, not a claim of proven compatibility. The current source only measures callback intervals and logs summaries; it does not patch or write gameplay state. In-game parity remains untested, and optional diagnostics add some overhead.
+This is a project requirement, not a claim of proven compatibility. The current source measures callback intervals and optionally patches selected methods to observe elapsed time. It does not write gameplay state, skip original methods or change their arguments/results. In-game parity remains untested, and optional diagnostics add overhead.
 
 ## What currently works in the source
 
@@ -237,3 +237,25 @@ iteration and collision callbacks using the loader's retained local address map.
 It identifies MoveNext versus CollideBloon as the next measurement boundary;
 no gameplay replacement or new runtime probe is installed by that investigation.
 Raw disassembly remains in the ignored local analysis directory.
+
+## Collision breakdown experiment (0.7.0)
+
+See [the collision benchmark guide](docs/COLLISION-BENCHMARK.md) for settings,
+the first validation run, repeat-run procedure and interpretation limits.
+Enable Collision Profiling is default-off and requires a restart. When enabled,
+it takes priority over Detailed Profiling and enables the broad simulation timer.
+The overlay shows **Collision breakdown: 3/3** if all three hooks installed;
+**Detail: 0/8** is expected in this mode. Installation is not proof of interception.
+
+This mode measures the collision pass, the selected bloon-collision loop, and
+CollideBloon calls inside that loop. The loop-minus-hit remainder includes
+searching, bookkeeping and interception overhead; it is **not pure search time**.
+Shared generic MoveNext is not patched, no iterator is advanced by this mod, and
+no candidates or game objects are copied, retained or changed. Reviewed native
+and wrapper hashes are checked locally before installing the new probes.
+
+CSV files append eight columns (34 total) and a mod-version event. Old CSVs are
+unchanged. Local Release compilation, recorder tests and synthetic nested-timer
+tests passed. The build reported NU1900 because NuGet vulnerability data was
+unreachable; no dependency or package references were added. Actual interception,
+overlay layout and measurement overhead still require an in-game pilot.

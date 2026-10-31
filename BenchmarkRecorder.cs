@@ -18,6 +18,8 @@ internal sealed class BenchmarkRecorder
     private readonly double[] simulationMs = new double[Capacity];
     private readonly int[] simulationCalls = new int[Capacity];
     private readonly DetailTimings[] details = new DetailTimings[Capacity];
+    private readonly CollisionTimings[] collisions = new CollisionTimings[Capacity];
+    public bool CollisionProfileEnabled { get; set; }
     public int DetailedMask { get; set; }
     private readonly string[] events = new string[4096];
     private readonly double[] eventTimes = new double[4096];
@@ -50,11 +52,12 @@ internal sealed class BenchmarkRecorder
         return true;
     }
 
-    public bool Add(double milliseconds, string state = "unknown", double simulationMilliseconds = 0, int calls = 0, DetailTimings detail = default)
+    public bool Add(double milliseconds, string state = "unknown", double simulationMilliseconds = 0, int calls = 0, DetailTimings detail = default, CollisionTimings collision = default)
     {
         if (!IsRecording || !double.IsFinite(milliseconds) || milliseconds <= 0) return false;
         states[Count] = state;
         details[Count] = detail;
+        collisions[Count] = collision;
         simulationMs[Count] = simulationMilliseconds;
         simulationCalls[Count] = calls;
         intervals[Count++] = milliseconds;
@@ -81,7 +84,7 @@ internal sealed class BenchmarkRecorder
         using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.Read))
         using (var writer = new StreamWriter(stream))
         {
-            writer.WriteLine("record_type,sample,elapsed_ms,frame_interval_ms,state,event,simulation_ms,simulation_calls,profiling_enabled,detailed_mask,collision_ms,collision_calls,target_ms,target_calls,weapon_ms,weapon_calls,bloon_ms,bloon_calls,travel_ms,travel_calls,tracking_ms,tracking_calls,age_ms,age_calls,maintenance_ms,maintenance_calls");
+            writer.WriteLine("record_type,sample,elapsed_ms,frame_interval_ms,state,event,simulation_ms,simulation_calls,profiling_enabled,detailed_mask,collision_ms,collision_calls,target_ms,target_calls,weapon_ms,weapon_calls,bloon_ms,bloon_calls,travel_ms,travel_calls,tracking_ms,tracking_calls,age_ms,age_calls,maintenance_ms,maintenance_calls,collision_profile_enabled,collision_parent_ms,collision_parent_calls,bloon_loop_ms,bloon_loop_calls,bloon_hit_ms,bloon_hit_calls,bloon_loop_remainder_ms");
             double elapsed = 0;
             for (int i = 0; i < Count; i++)
             {
@@ -89,11 +92,13 @@ internal sealed class BenchmarkRecorder
                 // Invariant formatting keeps decimal points valid in CSV on
                 // computers whose regional settings normally use commas.
                 var d = details[i];
-                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "frame,{0},{1:R},{2:R},{3},,{4:R},{5},{6},{7},{8:R},{9},{10:R},{11},{12:R},{13},{14:R},{15},{16:R},{17},{18:R},{19},{20:R},{21},{22:R},{23}", i + 1, elapsed, intervals[i], states[i], simulationMs[i], simulationCalls[i], ProfileEnabled ? 1 : 0, DetailedMask, d.CollisionMs, d.CollisionCalls, d.TargetMs, d.TargetCalls, d.WeaponMs, d.WeaponCalls, d.BloonMs, d.BloonCalls, d.TravelMs, d.TravelCalls, d.TrackingMs, d.TrackingCalls, d.AgeMs, d.AgeCalls, d.MaintenanceMs, d.MaintenanceCalls));
+                writer.Write(string.Format(CultureInfo.InvariantCulture, "frame,{0},{1:R},{2:R},{3},,{4:R},{5},{6},{7},{8:R},{9},{10:R},{11},{12:R},{13},{14:R},{15},{16:R},{17},{18:R},{19},{20:R},{21},{22:R},{23}", i + 1, elapsed, intervals[i], states[i], simulationMs[i], simulationCalls[i], ProfileEnabled ? 1 : 0, DetailedMask, d.CollisionMs, d.CollisionCalls, d.TargetMs, d.TargetCalls, d.WeaponMs, d.WeaponCalls, d.BloonMs, d.BloonCalls, d.TravelMs, d.TravelCalls, d.TrackingMs, d.TrackingCalls, d.AgeMs, d.AgeCalls, d.MaintenanceMs, d.MaintenanceCalls));
+                var c = collisions[i];
+                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, ",{0},{1:R},{2},{3:R},{4},{5:R},{6},{7:R}", CollisionProfileEnabled ? 1 : 0, c.ParentMs, c.ParentCalls, c.LoopMs, c.LoopCalls, c.HitMs, c.HitCalls, c.LoopRemainderMs));
             }
             // Event rows follow frame rows; sort by elapsed_ms for a timeline.
             for (int i = 0; i < eventCount; i++)
-                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "event,,{0:R},,,{1},,,{2},{3},,,,,,,,,,,,,,,,", eventTimes[i], events[i], ProfileEnabled ? 1 : 0, DetailedMask));
+                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "event,,{0:R},,,{1},,,{2},{3},,,,,,,,,,,,,,,,,{4},,,,,,,", eventTimes[i], events[i], ProfileEnabled ? 1 : 0, DetailedMask, CollisionProfileEnabled ? 1 : 0));
         }
         // Includes successful flush/close. A failed write keeps the buffer so
         // Stop and Save can retry. Any partial file is not a completed benchmark.

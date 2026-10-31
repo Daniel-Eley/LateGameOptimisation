@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0 - Unreleased
+
+- Add separate opt-in, restart-required collision breakdown profiling, guarded by reviewed binary hashes.
+- Time the parent collision pass, bloon-grid collision loop and its nested hit-processing calls.
+- Label the loop-minus-hit residual explicitly as including bookkeeping and probe overhead, not pure search time.
+- Avoid shared generic iterator hooks; collision mode takes priority over eight-probe detailed mode.
+- Append eight CSV columns, mod-version/status events and overlay status; preserve existing columns.
+- Add nested/recursive/unwind timing and CSV tests; local checks pass, native interception needs an in-game pilot.
+- No gameplay optimisation or measured speedup yet.
+
 ## 0.6.0 - Unreleased
 
 - Expand opt-in detailed profiling with projectile travel, tracking, lifetime and process-list entry points.

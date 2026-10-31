@@ -161,3 +161,26 @@ The overlay uses a population count while detailed_mask retains bit semantics.
 Broad-only profiling remains available for overhead comparisons. No claim is made
 that these candidate methods exhaust unmeasured simulation work. Unknown native
 coverage, inclusive overlap and high-frequency interception overhead remain limits.
+
+## Collision breakdown (0.7.0)
+
+CollisionProfiler installs three exact non-generic method overloads after matching
+the inspected GameAssembly and wrapper SHA-256 hashes. It measures a parent pass,
+the CollisionState-taking CollideBloons loop and CollideBloon nested within that
+loop. No instance or arguments are injected into patches. All prefixes/finalizers
+return void and do not alter the original execution or exceptions. Installation
+failure disables collection and attempts removal of this owner's patches only.
+
+CollisionTimingAccumulator separates numeric bookkeeping from game hooks so tests
+can supply synthetic timestamps. Each category tracks nesting depth. The outermost
+entry stores a timestamp; nested entries get a sentinel and are not added again.
+Loop hit totals are retained until the enclosing loop ends, then committed together
+with the loop duration. Drain clears only completed totals, preserving live scopes.
+The remainder subtracts hit ticks from loop ticks before conversion to milliseconds.
+It is not an exclusive CPU sample or pure iterator cost. No arrays grow in hot calls.
+
+The new mode suppresses the eight-probe detailed mode at startup to avoid combining
+experiments. Baseline runs must restart with Collision Profiling off to remove its
+hook overhead; simply not recording does not remove installed hooks. Binary checks
+are a compatibility gate for this narrow experiment, not an authenticity guarantee.
+See [the benchmark guide](COLLISION-BENCHMARK.md) for runtime acceptance checks.

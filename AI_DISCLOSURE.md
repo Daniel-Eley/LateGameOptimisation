@@ -48,3 +48,10 @@ produced with Codex using locally retained Cpp2IL address metadata and Iced x64
 instruction decoding. The report summarizes manually interpreted control flow;
 it is not a complete decompilation or correctness proof. No raw game disassembly,
 proprietary binaries or gameplay replacement were published.
+
+The 0.7.0 collision timing experiment, nesting accumulator, CSV/overlay integration,
+synthetic tests and benchmark guide were generated with Codex. The design uses
+non-generic enclosing methods because bloon-only interception of shared generic
+MoveNext has not been established. Residual time is explicitly not a direct
+search measurement. Local build and tests passed; native interception, overhead
+and gameplay equivalence are not certified by those checks.

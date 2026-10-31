@@ -1,5 +1,9 @@
 # Native collision investigation: first pass
 
+Follow-up: [0.7.0 collision profiling](COLLISION-BENCHMARK.md) uses the enclosing
+bloon loop minus nested hit processing as a labelled residual. It does not hook
+shared generic MoveNext or claim a direct candidate-search measurement.
+
 31 October 2026. AI-assisted analysis using local binaries; no runtime patch or
 game installation changes. This advances the earlier [interface feasibility
 assessment](FEASIBILITY.md), which had not inspected native implementations.

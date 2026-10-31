@@ -22,6 +22,7 @@ public class LateGameOptimisation : BloonsTD6Mod
     public static readonly ModSettingBool ShowDiagnosticsOverlay = new(true);
     public static readonly ModSettingBool EnableSimulationProfiling = new(false) { requiresRestart = true };
     public static readonly ModSettingBool EnableDetailedProfiling = new(false) { requiresRestart = true };
+    public static readonly ModSettingBool EnableCollisionProfiling = new(false) { requiresRestart = true };
     private string gameState = "unknown";
     private bool stateChanged;
     private string stateBeforePause = "unknown";
@@ -44,16 +45,19 @@ public class LateGameOptimisation : BloonsTD6Mod
     public override void OnApplicationStart()
     {
         instance = this;
-        if (EnableSimulationProfiling || EnableDetailedProfiling)
+        if (EnableSimulationProfiling || EnableDetailedProfiling || EnableCollisionProfiling)
         {
             try { SimulationProfiler.Install(); }
             catch (Exception error) { ModHelper.Msg<LateGameOptimisation>($"Simulation profiling unavailable: {error.Message}"); }
         }
-        if (EnableDetailedProfiling && SimulationProfiler.Installed)
+        // Keep the two high-overhead experiments separate. Collision mode takes
+        // priority if both saved switches are on; the CSV records actual hooks.
+        if (EnableDetailedProfiling && !EnableCollisionProfiling && SimulationProfiler.Installed)
         {
             try { DetailedProfiler.Install(); }
             catch (Exception error) { ModHelper.Msg<LateGameOptimisation>($"Detailed profiling setup error: {error.Message}"); }
         }
+        if (EnableCollisionProfiling && SimulationProfiler.Installed) CollisionProfiler.Install();
         ModHelper.Msg<LateGameOptimisation>("Diagnostics prototype loaded. No gameplay optimisations enabled.");
     }
 
@@ -80,7 +84,7 @@ public class LateGameOptimisation : BloonsTD6Mod
             long timestamp = Stopwatch.GetTimestamp();
             var profile = SimulationProfiler.Drain();
             if (recordingTimestamp != 0 && recorder.Add((timestamp - recordingTimestamp) * 1000.0 / Stopwatch.Frequency,
-                    stateChanged ? "transition" : (!focused ? "unfocused" : gameState), profile.Milliseconds, profile.Calls, DetailedProfiler.Drain()))
+                    stateChanged ? "transition" : (!focused ? "unfocused" : gameState), profile.Milliseconds, profile.Calls, DetailedProfiler.Drain(), CollisionProfiler.Drain()))
                 StopAndSave();
             stateChanged = false;
             recordingTimestamp = timestamp;
@@ -109,6 +113,7 @@ public class LateGameOptimisation : BloonsTD6Mod
                     $"Frame mean: {window.Mean:F2} ms   Max: {window.Maximum:F2} ms\n" +
                     $"Window: {window.Total / 1000:F1} / 10 s   Samples: {window.Count}\n" +
                     $"State: {gameState} | Profile: {(SimulationProfiler.Installed ? "on" : "off")} | Detail: {DetailedProfiler.InstalledCount}/{DetailedProfiler.ProbeCount}\n" +
+                    $"Collision breakdown: {CollisionProfiler.Status}\n" +
                     "Developed with OpenAI Codex (AI)";
                 nextDisplayTimestamp = now + Stopwatch.Frequency / 2;
             }
@@ -130,6 +135,10 @@ public class LateGameOptimisation : BloonsTD6Mod
         if (!recorder.Start()) return;
         recorder.ProfileEnabled = SimulationProfiler.Installed;
         recorder.DetailedMask = DetailedProfiler.InstalledMask;
+        recorder.CollisionProfileEnabled = CollisionProfiler.Installed;
+        CollisionProfiler.Drain();
+        recorder.Mark("collision_" + CollisionProfiler.Status.Replace('/', '_'));
+        recorder.Mark("mod_version_" + ModHelperData.Version);
         DetailedProfiler.Drain();
         recorder.Mark("detailed_" + DetailedProfiler.Status);
         recorder.Mark("initial_state_" + gameState);
@@ -170,7 +179,7 @@ public class LateGameOptimisation : BloonsTD6Mod
             long now = Stopwatch.GetTimestamp();
             var profile = SimulationProfiler.Drain();
             if (recordingTimestamp != 0) recorder.Add((now - recordingTimestamp) * 1000.0 / Stopwatch.Frequency,
-                "transition", profile.Milliseconds, profile.Calls, DetailedProfiler.Drain());
+                "transition", profile.Milliseconds, profile.Calls, DetailedProfiler.Drain(), CollisionProfiler.Drain());
             recorder.Stop(marker + "_stop");
             SimulationProfiler.Recording = false;
             saveRequested = true;
@@ -209,11 +218,11 @@ public class LateGameOptimisation : BloonsTD6Mod
             // Bottom-left keeps the overlay away from the top resource bar.
             // Screen-relative bounds also adapt to window-size changes.
             float width = Mathf.Min(390, Screen.width - 16);
-            float top = Mathf.Max(8, Screen.height - 198);
-            GUI.Box(new Rect(8, top, width, 190), "");
+            float top = Mathf.Max(8, Screen.height - 218);
+            GUI.Box(new Rect(8, top, width, 210), "");
             overlayStyle.normal.textColor = Color.white;
-            GUI.Label(new Rect(18, top + 8, width - 20, 134), displayText, overlayStyle);
-            GUI.Label(new Rect(18, top + 140, width - 20, 46), recordingStatus, overlayStyle);
+            GUI.Label(new Rect(18, top + 8, width - 20, 154), displayText, overlayStyle);
+            GUI.Label(new Rect(18, top + 160, width - 20, 46), recordingStatus, overlayStyle);
         }
         catch (System.Exception exception)
         {
